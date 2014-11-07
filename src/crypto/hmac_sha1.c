@@ -4,13 +4,14 @@
 
 void hmac_sha1(unsigned char* key, int keylen, unsigned char* msg, int msglen, unsigned char digest[20])
 {
+#define BLOCK_SIZE (64)
 	const int block_size = 64;
 	const unsigned char i_pad = 0x36;
 	const unsigned char o_pad = 0x5C;
 
-	unsigned char i_pad_block[block_size];
-	unsigned char o_pad_block[block_size];
-	unsigned char key_block[block_size];
+	unsigned char i_pad_block[BLOCK_SIZE];
+	unsigned char o_pad_block[BLOCK_SIZE];
+	unsigned char key_block[BLOCK_SIZE];
 
 	if(keylen == block_size){
 		memcpy(&key_block[0], key, keylen);
