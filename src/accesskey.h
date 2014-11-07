@@ -8,10 +8,12 @@ namespace alioss {
 // AccessKey Pair
 class accesskey {
 public:
-	accesskey(int8_t* key, int8_t* secret)
-		: _key(key)
-		, _secret(secret)
-	{}
+	accesskey() {}
+	void set_key(const char* key, const char* secret)
+	{
+		_key = key;
+		_secret = secret;
+	}
 
 public:
 	const std::string& key() const {
