@@ -66,7 +66,13 @@
     <ClCompile Include="..\..\src\misc\time.cpp">
       <Filter>Source Files\misc</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\bucket.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\ossmeta.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\osserror.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -107,7 +113,13 @@
     <ClInclude Include="..\..\src\misc\time.h">
       <Filter>Source Files\misc</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\bucket.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\src\ossmeta.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\osserror.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
