@@ -22,12 +22,12 @@ namespace stream{
 
 	class istream : public stream_size {
 	public:
-		virtual int read_some(const void* buf, int sz) = 0;
+		virtual int read_some(unsigned char* buf, int sz) = 0;
 	};
 
 	class ostream : public stream_size {
 	public:
-		virtual int write_some(const void* buf, int sz) = 0;
+		virtual int write_some(const unsigned char* buf, int sz) = 0;
 	};
 
 } // namespace stream
