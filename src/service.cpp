@@ -26,37 +26,7 @@ bool service::disconnect()
 bool service::query()
 {
 	request();
-
-	_http.get_head();
-
-	class body_stream : public stream::ostream {
-	public:
-		body_stream()
-			: _size(0)
-		{}
-
-	public:
-		virtual int size() const override {
-			return _size;
-		}
-
-		virtual int write_some(const unsigned char* buf, int sz) override
-		{
-			std::string str((char*)buf, sz);
-			std::cout << str;
-
-			_size += sz;
-
-			return sz;
-		}
-
-	protected:
-		int _size;
-	};
-
-	body_stream bs;
-
-	_http.get_body(bs);
+	response();
 
 	return true;
 }
