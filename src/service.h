@@ -123,7 +123,14 @@ protected:
 	bool request();
 	bool response();
 
-	bool parse_response_body();
+	bool parse_response_body(const char* data, int size);
+
+private:
+	// avoid copy-ctor on vector::push_back()
+	bucket& bucket_create() {
+		_buckets.push_back(bucket());
+		return _buckets[_buckets.size() - 1];
+	}
 
 protected:
 	std::string		_prefix;
