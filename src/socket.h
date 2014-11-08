@@ -59,6 +59,20 @@ protected:
 	bool _b_inited;
 };
 
+class endpoint {
+public:
+	const std::string& ip() { return _ip; }
+	int port() { return _port; }
+
+	void set_ep(const char* ip, int port){
+		_ip = ip;
+		_port = port;
+	}
+private:
+	std::string _ip;
+	int _port;
+};
+
 class resolver{
 public:
 	resolver()
