@@ -33,9 +33,6 @@
     <ClCompile Include="..\..\src\alioss.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\http.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -69,15 +66,15 @@
     <ClCompile Include="..\..\src\misc\stream.cpp">
       <Filter>Source Files\misc</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\socket.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\accesskey.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\alioss.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\http.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\service.h">
@@ -109,6 +106,9 @@
     </ClInclude>
     <ClInclude Include="..\..\src\misc\stream.h">
       <Filter>Source Files\misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\socket.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
