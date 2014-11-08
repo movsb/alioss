@@ -75,7 +75,7 @@ bool service::response()
 {
 	_http.get_head();
 
-	std::unique_ptr<body_stream> pbs(new body_stream);
+	std::unique_ptr<http::str_body_ostream> pbs(new http::str_body_ostream);
 	_http.get_body(*pbs);
 	parse_response_body((char*)pbs->data(), pbs->size());
 	
