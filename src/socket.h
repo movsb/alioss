@@ -1,8 +1,148 @@
+#ifndef __alioss_socket_h__
+#define __alioss_socket_h__
+
 #include <cstring>
+#include <string>
+#include <vector>
+
+#ifdef _WIN32
+
+#include <WinSock2.h>
+#include <WinInet.h>
+#include <WS2tcpip.h>
+
+#else 
+
+#include <netdb.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+#endif
+
+#include "misc/stream.h"
+
+namespace alioss {
+
+namespace socket {
+
+class wsa_instance {
+public:
+	wsa_instance()
+		: _b_inited(false)
+	{
+		init();
+	}
+
+	~wsa_instance()
+	{
+		uninit();
+	}
+
+public:
+	bool init() {
+		::WSAData wsa;
+		if (::WSAStartup(MAKEWORD(2, 2), &wsa) != 0){
+			throw std::runtime_error("[error] WSAStartup()");
+		}
+		_b_inited = true;
+		return true;
+	}
+	bool uninit() {
+		if (_b_inited && ::WSACleanup() == 0){
+			_b_inited = false;
+			return true;
+		}
+		return false;
+	}
+
+protected:
+	bool _b_inited;
+};
+
+class resolver{
+public:
+	resolver()
+		: _size(0)
+		, _paddr(nullptr)
+	{}
+
+	~resolver(){
+		free();
+	}
+
+	bool resolve(const char* host, const char* service);
+
+	void free() {
+		_size = 0;
+		if (_paddr){
+			::freeaddrinfo(_paddr);
+			_paddr = nullptr;
+		}
+	}
+
+	size_t size() const {
+		return _size;
+	}
+
+	std::string operator[](int index) {
+		struct addrinfo* p = _paddr;
+		while (index > 1){
+			p = p->ai_next;
+			index--;
+		}
+		return ::inet_ntoa(((sockaddr_in*)p->ai_addr)->sin_addr);
+	}
+
+protected:
+	int _size;
+	struct addrinfo* _paddr;
+};
+
+class socket {
+public:
+	socket()
+		: _sockfd(-1)
+		, _alive(false)
+	{}
+
+	virtual ~socket()
+	{
+		if (_alive){
+			disconnect(); // throws
+			_alive = false;
+		}
+	}
+
+public:
+	bool connect(const char* ip, int port);
+	bool disconnect();
+	bool alive() { return _alive; }
+	bool send(const void* data, size_t sz);
+	size_t recv(void* buf, size_t sz);
+
+protected:
+	void set_alive(bool alive){
+		_alive = alive;
+	}
+
+	std::string _ip;
+	int _port;
+#ifdef _WIN32
+	SOCKET _sockfd;
+#else
+	int _sockfd;
+#endif
+	bool _alive;
+};
+
+} // namespace socket
 
 namespace http {
 
 namespace header {
+
+	typedef const char* const FIELD;
+	static FIELD kContentLength = "Content-Length";
 
 class item
 {
@@ -124,7 +264,7 @@ public:
 		_items.push_back(item(key, val, space));
 		return true;
 	}
-	
+
 	bool add_host(const char* val){
 		return add("Host", val);
 	}
@@ -152,6 +292,10 @@ public:
 	bool add_date(const char* val){
 		return add("Date", val);
 	}
+	
+	bool add_authorization(const char* val){
+		return add("Authorization", val);
+	}
 
 	bool remove(const char* key){
 		for(auto it=_items.begin(); it!=_items.end();){
@@ -174,9 +318,7 @@ public:
 			}
 		}
 		return false;
-	}
-
-				
+	}			
 
 protected:
 	std::string _verb;
@@ -188,59 +330,7 @@ protected:
 
 } // namespace header
 
-namespace socket {
-class resolver{
-public:
-	resolver()
-		: _size(0)
-		, _paddr(nullptr)
-	{}
-
-	~resolver(){
-		free();
-	}
-
-	bool resolve(const char* host, const char* service);
-	void free() {
-		_size = 0;
-		if(_paddr){
-			::freeaddrinfo(_paddr);
-			_paddr = nullptr;
-		}
-	}
-
-	size_t size() const {
-		return _size;
-	}
-
-	struct sockaddr_in* operator[](int index) {
-		struct addrinfo* p = _paddr;
-		while(index > 1){
-			p = p->ai_next;
-			index--;
-		}
-		return (struct sockaddr_in*)p->ai_addr;
-	}
-			
-protected:
-	int _size;
-	struct addrinfo* _paddr;
-};
-
-class socket {
-public:
-	bool connect(const char* ip, int port);
-	bool disconnect();
-	bool send(const void* data, size_t sz);
-	bool recv(void* buf, size_t sz);
-
-protected:
-	std::string _ip;
-	int _port;
-	int _sockfd;
-};
-
-} // namespace socket
+const char* const scrlf = "\r\n";
 
 class http : public socket::socket
 {
@@ -251,13 +341,21 @@ public:
 
 	bool put_head();
 	bool get_head();
+	int  get_body_len();
+	bool put_body(const void* data, size_t sz);
+	bool put_body(stream::istream& is);
+	bool get_body(void* data, size_t sz);
+	bool get_body(stream::ostream& os);
 
-protected:
-	bool get_line(std::string* line);
+	bool get_line(std::string* line, bool crlf=false);
 
 protected:
 	header::head _head;	
 };
 
 } // namespace http
+
+} // namespace alioss
+
+#endif // !__alioss_socket_h__
 
