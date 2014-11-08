@@ -18,6 +18,7 @@
     <ClCompile Include="..\..\src\crypto\md5.c" />
     <ClCompile Include="..\..\src\crypto\sha1.c" />
     <ClCompile Include="..\..\src\misc\time.cpp" />
+    <ClCompile Include="..\..\src\ossmeta.cpp" />
     <ClCompile Include="..\..\src\socket.cpp" />
     <ClCompile Include="..\..\src\main.cpp" />
     <ClCompile Include="..\..\src\misc\stream.cpp" />
@@ -33,6 +34,7 @@
     <ClInclude Include="..\..\src\crypto\md5.h" />
     <ClInclude Include="..\..\src\crypto\sha1.h" />
     <ClInclude Include="..\..\src\misc\time.h" />
+    <ClInclude Include="..\..\src\ossmeta.h" />
     <ClInclude Include="..\..\src\socket.h" />
     <ClInclude Include="..\..\src\misc\stream.h" />
     <ClInclude Include="..\..\src\service.h" />

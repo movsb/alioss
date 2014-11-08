@@ -12,76 +12,11 @@ Author	: twofei <anhbk@qq.com>
 
 #include "socket.h"
 #include "accesskey.h"
+#include "ossmeta.h"
 
 namespace alioss {
 
 namespace service{
-
-class bucket{
-public:
-	bucket() {}
-
-	bucket(const char* name,const char*	loc, const char* date)
-		: _name(name)
-		, _location(loc)
-		, _creation_date(date)
-	{}
-
-	void set_name(const char* name) {
-		_name = name;
-	}
-	const std::string& name() const {
-		return _name;
-	}
-
-	void set_location(const char* loc){
-		_location = loc;
-	}
-	const std::string& location() const {
-		return _location;
-	}
-	
-	void set_creation_date(const char* date){
-		_creation_date = date;
-	}
-	const std::string& creation_date() const {
-		return _creation_date;
-	}
-
-protected:
-	std::string _name;
-	std::string _location;
-	std::string _creation_date;
-};
-
-class owner {
-public:
-	owner() {}
-	owner(const char* id, const char* name)
-		: _id(id)
-		, _display_name(name)
-	{}
-
-	void set_id(const char* id) {
-		_id = id;
-	}
-
-	void set_display_name(const char* name){
-		_display_name = name;
-	}
-
-	const std::string& id() const {
-		return _id;
-	}
-
-	const std::string& display_name() const {
-		return _display_name;
-	}
-
-protected:
-	std::string _id;
-	std::string _display_name;
-};
 
 class service {
 private:
@@ -127,8 +62,8 @@ protected:
 
 private:
 	// avoid copy-ctor on vector::push_back()
-	bucket& bucket_create() {
-		_buckets.push_back(bucket());
+	meta::bucket& bucket_create() {
+		_buckets.push_back(meta::bucket());
 		return _buckets[_buckets.size() - 1];
 	}
 
@@ -140,8 +75,8 @@ protected:
 	std::string		_next_marker;
 
 protected:
-	owner _owner;
-	std::vector<bucket> _buckets;
+	meta::owner _owner;
+	std::vector<meta::bucket> _buckets;
 
 protected:
 	accesskey	_key;

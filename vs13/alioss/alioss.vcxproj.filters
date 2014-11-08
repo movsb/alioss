@@ -66,6 +66,9 @@
     <ClCompile Include="..\..\src\misc\time.cpp">
       <Filter>Source Files\misc</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\ossmeta.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\accesskey.h">
@@ -103,6 +106,9 @@
     </ClInclude>
     <ClInclude Include="..\..\src\misc\time.h">
       <Filter>Source Files\misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\ossmeta.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
