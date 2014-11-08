@@ -73,6 +73,47 @@ protected:
 	std::string _creation_date;
 };
 
+class content {
+public:
+	/// setters
+	void set_key(const char* v)				{ _key = v; }
+	void set_last_modified(const char* v)	{ _last_modified = v; }
+	void set_e_tag(const char* v)			{ _e_tag = v; }
+	void set_type(const char* v)			{ _type = v; }
+	void set_size(const char* v)			{ _size = v; }
+	void set_storage_class(const char* v)	{ _storage_class = v; }
+
+	/// getters
+	const std::string& key() const			{ return _key; }
+	const std::string& last_modified() const{ return _last_modified; }
+	const std::string& e_tag() const		{ return _e_tag; }
+	const std::string& type() const 		{ return _type; }
+	const std::string& size() const			{ return _size; }
+	const std::string& storage_class() const{ return _storage_class; }
+
+	/// others
+	void set_owner(const char* id, const char* name) {
+		_owner.set_id(id);
+		_owner.set_display_name(name);
+	}
+
+	// here I want to use the name `owner',
+	// but it seems to be ambiguous. So I add
+	// a namespace `meta' as prefix. It works!
+	meta::owner& owner() { return _owner; }
+
+protected:
+	std::string		_key;
+	std::string		_last_modified;
+	std::string		_e_tag;
+	std::string		_type;
+	std::string		_size;
+	std::string		_storage_class;
+	
+	meta::owner			_owner;
+
+};
+
 } // namespace meta
 
 } // namespace alioss
