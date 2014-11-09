@@ -20,6 +20,7 @@
     <ClCompile Include="..\..\src\crypto\sha1.c" />
     <ClCompile Include="..\..\src\misc\color_term.cpp" />
     <ClCompile Include="..\..\src\misc\time.cpp" />
+    <ClCompile Include="..\..\src\object.cpp" />
     <ClCompile Include="..\..\src\osserror.cpp" />
     <ClCompile Include="..\..\src\ossmeta.cpp" />
     <ClCompile Include="..\..\src\socket.cpp" />
@@ -39,6 +40,7 @@
     <ClInclude Include="..\..\src\crypto\sha1.h" />
     <ClInclude Include="..\..\src\misc\color_term.h" />
     <ClInclude Include="..\..\src\misc\time.h" />
+    <ClInclude Include="..\..\src\object.h" />
     <ClInclude Include="..\..\src\osserror.h" />
     <ClInclude Include="..\..\src\ossmeta.h" />
     <ClInclude Include="..\..\src\socket.h" />
