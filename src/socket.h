@@ -157,6 +157,7 @@ namespace header {
 
 	typedef const char* const FIELD;
 	static FIELD kContentLength = "Content-Length";
+	static FIELD kContentType = "Content-Type";
 
 class item
 {
@@ -259,6 +260,10 @@ public:
 
 	const std::string& get_status() {
 		return _status;
+	}
+
+	std::string get_status_n_comment() {
+		return _status + " " + _comment;
 	}
 
 	bool add(const char* keyval, bool space=true){
