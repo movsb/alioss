@@ -141,7 +141,7 @@ bool bucket::parse_response_body(const char* data, int size)
 	return true;
 }
 
-bool bucket::delete_()
+bool bucket::delete_bucket()
 {
 	connect();
 
@@ -192,25 +192,14 @@ bool bucket::delete_()
 		4. 403 Forbidden
 	----------------------------------------------------*/
 	auto& status = head.get_status();
-	if (status == "204"){
+	if (status == "204") {
 		return true;
 	}
-	else if (status == "404"){
-		auto oe = new osserr(bs.data(), bs.size());
-		throw ossexcept(ossexcept::kNotFound, "Not Found", __FUNCTION__, oe);
-	}
-	else if (status == "409"){
-		auto oe = new osserr(bs.data(), bs.size());
-		throw ossexcept(ossexcept::kConflict, "Conflict", __FUNCTION__, oe);
-	}
-	else if (status == "403"){
-		auto oe = new osserr(bs.data(), bs.size());
-		throw ossexcept(ossexcept::kForbidden, "Forbidden", __FUNCTION__, oe);
-	}
 	else{
-		throw "fatal: unknown error occurred!";
+		auto oe = new osserr(bs.data(), bs.size());
+		throw ossexcept(ossexcept::kNotSpecified, head.get_status_n_comment().c_str(), __FUNCTION__, oe);
 	}
-
+	
 	return true;
 }
 
