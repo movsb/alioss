@@ -337,8 +337,22 @@ bool bucket::list_objects(const char* folder, bool recursive)
 	return true;
 }
 
+void bucket::dump_objects(std::function<bool(int i, const meta::content& object)> dumper)
+{
+	int i = 0;
+	for (auto& obj : _contents){
+		dumper(++i, obj);
+	}
+}
 
-
+void bucket::dump_folders(std::function<bool(int i, const std::string& folder)> dumper)
+{
+	int i = 0;
+	// What's `fir'? I DON'T know why I give a name like that.
+	for (auto& fir : _common_prefixes){
+		dumper(++i, fir);
+	}
+}
 
 } // namespace bucket
 

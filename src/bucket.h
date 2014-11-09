@@ -7,6 +7,7 @@ Author	: twofei <anhbk@qq.com>
 #include <string>
 #include <sstream>
 #include <vector>
+#include <functional>
 
 #include "socket.h"
 #include "accesskey.h"
@@ -63,15 +64,20 @@ public:
 	bool connect();
 	bool disconnect();
 
-	// Delete bucket
+	// Delete this bucket
 	bool delete_bucket();
 
-	// Create bucket
+	// Create bucket from _bkt
 	bool create_bucket();
 
 	// List specified object(s)
 	// folder: "" or "folder_name/"
 	bool list_objects(const char* folder="", bool recursive=false);
+
+	/// dump objects & dump directories
+	/// return false to interrupt iteration
+	void dump_objects(std::function<bool(int i, const meta::content& object)> dumper);
+	void dump_folders(std::function<bool(int i, const std::string& folder)> dumper);
 
 protected:
 	meta::content& create_content(){
