@@ -7,6 +7,7 @@
 #include "osserror.h"
 #include "service.h"
 #include "bucket.h"
+#include "object.h"
 #include "misc/color_term.h"
 
 using namespace alioss;
@@ -16,7 +17,7 @@ int main()
 	socket::wsa_instance wsa;
 
 	meta::bucket mbkt;
-	mbkt.set_name("twofei");
+	mbkt.set_name("twofei32");
 	mbkt.set_location("oss-cn-hangzhou");
 
 	accesskey key;
@@ -33,20 +34,9 @@ int main()
 	try {
 		color_term::color_term cterm;
 
-		bkt.list_objects();
+		object::oject obj(key, mbkt, ep);
 
-		std::cout << cterm(7, 3) << "--->Dumping folders:" << cterm(-1, -1) << std::endl;
-		bkt.dump_folders([&](int i, const std::string& f){
-			std::cout << "\t" << cterm(5, -1) << i << cterm(-1,-1) << ": " << f << std::endl;
-			return true;
-		});
-
-		std::cout << cterm(7, 3) << "--->Dumping objects:" << cterm(-1, -1) << std::endl;
-		bkt.dump_objects([&](int i, const meta::content& obj){
-			std::cout << "\t" << cterm(5, -1) << i << cterm(-1, -1) << ": "
-				<< obj.key() << "," << obj.size() << "B" << std::endl;
-			return true;
-		});
+		obj.delete_object("main.cpp");
 
 		cterm.restore();
 	}
