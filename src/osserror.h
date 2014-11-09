@@ -9,11 +9,23 @@ namespace alioss {
 
 class osserr {
 public:
-	osserr(){}
-	osserr(const char* xml, int size){ parse(xml, size); }
-	osserr(const unsigned char* xml, int size){ parse((char*)xml, size); }
+	osserr(){} // only this ctor can be a base class
+	osserr(const char* xml, int size){ 
+		parse(xml, size); 
+	}
+	osserr(const unsigned char* xml, int size){ 
+		parse((char*)xml, size); 
+	}
+	osserr(void* d){
+		parse(d);
+	}
 
-	virtual void parse(const char* xml, int size);
+	void parse(const char* xml, int size);
+	void parse(void* d); //xml doc
+
+	virtual void node_handler(void* n); //xml node
+
+	virtual void dump(std::function<void(const std::string&)> dumper);
 
 	const std::string& code() { return _code; }
 	const std::string& msg() { return _msg; }
@@ -34,9 +46,13 @@ public:
 	enum class ecode{};
 
 	static const ecode kNoError = ecode(0);
+	static const ecode kBadRequest = ecode(400);
 	static const ecode kNotFound = ecode(404);
 	static const ecode kConflict = ecode(409);
 	static const ecode kForbidden = ecode(403);
+	static const ecode kNotSpecified = ecode(-1);
+	static const ecode kUnhandled = ecode(-2);
+	static const ecode kXmlError = ecode(1);
 
 	ossexcept(ecode errcode, const char* errmsg, const char* errfunc=nullptr, osserr* oe=nullptr)
 		: _code(errcode), _what(errmsg)
@@ -63,10 +79,7 @@ public:
 
 	void dump_osserr(std::function<void(const std::string&)> dumper){
 		if (_osserr){
-			dumper(std::string("Code     : ") + _osserr->code());
-			dumper(std::string("Message  : ") + _osserr->msg());
-			dumper(std::string("HostId   : ") + _osserr->host_id());
-			dumper(std::string("RequestId: ") + _osserr->req_id());
+			_osserr->dump(dumper);
 		}
 	}
 
