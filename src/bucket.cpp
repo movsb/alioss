@@ -1,9 +1,11 @@
 #include <stdexcept>
 #include <iostream>
 #include <memory>
+#include <cstring>
 
 #include <tinyxml2/tinyxml2.h>
 
+#include "crypto/crypto.h"
 #include "misc/time.h"
 #include "misc/stream.h"
 #include "signature.h"
@@ -15,6 +17,41 @@
 namespace alioss{
 
 namespace bucket{
+
+namespace bucket_error{
+
+	void invalid_location_constraint::node_handler(void* n)
+	{
+		auto node = reinterpret_cast<tinyxml2::XMLElement*>(n);
+		if (strcmp(node->Value(), "LocationConstraint") == 0){
+			_location = node->FirstChild()->ToText()->Value();
+		}
+	}
+
+	void invalid_location_constraint::dump(std::function<void(const std::string&)> dumper)
+	{
+		__super::dump(dumper);
+
+		dumper(std::string("LocationConstraint: ") + _location);
+	}
+
+	void invalid_bucket_name::node_handler(void* n)
+	{
+		auto node = reinterpret_cast<tinyxml2::XMLElement*>(n);
+		if (strcmp(node->Value(), "BucketName") == 0){
+			_bucket_name = node->FirstChild()->ToText()->Value();
+		}
+	}
+
+	void invalid_bucket_name::dump(std::function<void(const std::string&)> dumper)
+	{
+		__super::dump(dumper);
+
+		dumper(std::string("BucketName: ") + _bucket_name);
+	}
+
+
+}
 
 bool bucket::connect()
 {
