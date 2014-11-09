@@ -21,5 +21,16 @@ std::string signature(const accesskey& keysec, const std::string& msg)
 	return sig;
 }
 
+std::string content_md5(const void* data, int size)
+{
+	using namespace crypto;
+	cmd5 md5;
+	md5.update(data, size);
+	md5.finish();
+
+	return cbase64::update(md5.digest(), 16);
+}
+
+
 } // namespace alioss
 

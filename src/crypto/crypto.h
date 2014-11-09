@@ -31,6 +31,10 @@ public:
 		::md5_finish(&_state, &_digest[0]);
 	}
 
+	const md5_byte_t* digest(){
+		return _digest;
+	}
+
 	std::string str(bool uppercase=true){
 		char s[33];
 		for(int i=0; i<16; i++){

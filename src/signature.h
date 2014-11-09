@@ -9,6 +9,8 @@ namespace alioss {
 
 std::string signature(const accesskey& keysec, const std::string& str);
 
+std::string content_md5(const void* data, int size);
+
 } // namespace alioss
 
 
