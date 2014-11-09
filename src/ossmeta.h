@@ -7,6 +7,13 @@ namespace alioss {
 
 namespace meta {
 
+	struct oss_data_center_s{
+		const char* name;
+		const char* location;
+	};
+
+	extern oss_data_center_s oss_data_center[];
+
 class owner {
 public:
 	owner() {}
