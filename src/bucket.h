@@ -69,6 +69,20 @@ public:
 	// Create bucket
 	bool create_bucket();
 
+	// List specified object(s)
+	// folder: "" or "folder_name/"
+	bool list_objects(const char* folder="", bool recursive=false);
+
+protected:
+	meta::content& create_content(){
+		_contents.push_back(meta::content());
+		return _contents[_contents.size() - 1];
+	}
+
+	std::string& create_common_prefix(){
+		_common_prefixes.push_back(std::string());
+		return _common_prefixes[_common_prefixes.size() - 1];
+	}
 
 protected: // Request Parameters
 	std::string _delimiter;
