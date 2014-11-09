@@ -214,6 +214,100 @@ bool bucket::delete_()
 	return true;
 }
 
+bool bucket::create_bucket()
+{
+	connect();
+
+	std::stringstream ss;
+
+	auto& head = _http.head();
+	head.clear();
+
+	//---------------------------- Requesting----------------------------------
+	// Verb
+	head.set_verb("PUT / HTTP/1.1");
+
+	// Host
+	std::string location = _bkt.location().size() ? _bkt.location() : "oss-cn-hangzhou";
+	head.add_host((_bkt.name() + '.' + location + ".aliyuncs.com").c_str());
+
+	//Date
+	std::string date(gmt_time());
+	head.add_date(date.c_str());
+
+	// body
+	std::string body(R"(<?xml version="1.0" encoding="UTF-8"?><CreateBucketConfiguration><LocationConstraint>)");
+	body += location;
+	body += R"(</LocationConstraint></CreateBucketConfiguration>)";
+
+	// Content-*
+	head.add(http::header::kContentType, "text/xml");
+
+	ss.clear(); ss.str(""); ss << body.size();
+	head.add(http::header::kContentLength, std::string(ss.str()).c_str());
+
+	// Content-MD5
+	// auto md5 = content_md5(body.c_str(), body.size());
+
+	// Authorization
+	ss.clear(); ss.str("");
+	ss << "PUT\n"
+		<< "\n" // no content-md5 requested
+		<< "text/xml\n"
+		<< date << "\n"
+		<< '/' << _bkt.name() << '/';
+
+	head.add_authorization(signature(_key, std::string(ss.str())).c_str());
+
+	// Connection
+	head.add_connection("close");
+
+	_http.put_head();
+	_http.put_body(body.c_str(), body.size());
+
+	//-------------------------------------Response--------------------------------
+	http::str_body_ostream bs;
+
+	_http.get_head();
+	_http.get_body(bs);
+
+	disconnect();
+
+	/*----------------------------------------------------
+	ErrorCode:
+	1. 200, OK
+	2. 400, InvalidLocationConstraint
+	3. 400, InvalidBucketName
+	----------------------------------------------------*/
+	auto& status = head.get_status();
+	if (status == "200") return true;
+
+	tinyxml2::XMLDocument doc;
+	if (doc.Parse((char*)bs.data(), bs.size()) == tinyxml2::XMLError::XML_NO_ERROR){
+		std::string ec(doc.FirstChildElement("Error")->FirstChildElement("Code")->FirstChild()->ToText()->Value());
+		if (ec == "InvalidLocationConstraint"){
+			auto oe = new bucket_error::invalid_location_constraint(&doc);
+			throw ossexcept(ossexcept::kNotSpecified, head.get_status_n_comment().c_str(), __FUNCTION__, oe);
+		}
+		else if (ec == "InvalidBucketName"){
+			auto oe = new bucket_error::invalid_bucket_name(&doc);
+			throw ossexcept(ossexcept::kNotSpecified, head.get_status_n_comment().c_str(), __FUNCTION__, oe);
+		}
+		else if (ec == "BucketAlreadyExists"){
+			auto oe = new osserr(&doc);
+			throw ossexcept(ossexcept::kNotSpecified, head.get_status_n_comment().c_str(), __FUNCTION__, oe);
+		}
+
+		throw ossexcept(ossexcept::kUnhandled, "fatal: unhandled exception!", __FUNCTION__);
+	}
+	else{
+		throw ossexcept(ossexcept::kXmlError, head.get_status().c_str(), __FUNCTION__);
+	}
+
+	return true;
+}
+
+
 
 } // namespace bucket
 

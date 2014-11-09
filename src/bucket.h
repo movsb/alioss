@@ -66,6 +66,8 @@ public:
 	bool query();
 
 	bool delete_();
+	// Create bucket
+	bool create_bucket();
 
 protected:
 	bool request();
