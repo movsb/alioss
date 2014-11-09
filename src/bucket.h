@@ -63,19 +63,12 @@ public:
 	bool connect();
 	bool disconnect();
 
-	bool query();
-
 	// Delete bucket
 	bool delete_bucket();
 
 	// Create bucket
 	bool create_bucket();
 
-protected:
-	bool request();
-	bool response();
-
-	bool parse_response_body(const char* data, int size);
 
 protected: // Request Parameters
 	std::string _delimiter;
