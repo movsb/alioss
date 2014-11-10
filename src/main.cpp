@@ -34,9 +34,9 @@ int main()
 	try {
 		color_term::color_term cterm;
 
-		object::oject obj(key, mbkt, ep);
-
-		obj.delete_object("main.cpp");
+		service::service svc;
+		svc.set_key(key.key().c_str(), key.secret().c_str());
+		svc.list_buckets();
 
 		cterm.restore();
 	}
