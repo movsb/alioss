@@ -104,6 +104,59 @@ bool service::list_buckets()
 	}
 }
 
+bool service::verify_user()
+{
+	connect();
+
+	auto& head = _http.head();
+	head.clear();
+
+	std::stringstream ss;
+
+	//---------------------------- Requesting----------------------------------
+	// Verb
+	ss.clear(); ss.str("");
+	ss << "GET /?max-keys=0 HTTP/1.1"; // max-keys set, different from list_buckets()
+	head.set_verb(std::string(ss.str()).c_str());
+
+	// Host
+	head.add_host("oss.aliyuncs.com");
+
+	// Date
+	std::string date(gmt_time());
+	head.add_date(date.c_str());
+
+	// Authorization
+	std::string sigstr;
+	sigstr += "GET\n";		// Verb
+	sigstr += "\n\n";		// Content-MD5 & Content-Type
+	sigstr += date + "\n";	// GMT Date/Time
+	sigstr += "/";			// Resource
+
+	head.add_authorization(signature(_key, sigstr).c_str());
+
+	// Connection
+	head.add_connection("close");
+
+	_http.put_head();
+
+	//-------------------------------------Response--------------------------------
+	_http.get_head();
+
+	http::str_body_ostream bs;
+	_http.get_body(bs);
+
+	disconnect();
+
+	auto& status = head.get_status();
+	if (status == "200") {
+		return true;
+	}
+	else{
+		auto oe = new osserr(bs.data(), bs.size());
+		throw ossexcept(ossexcept::kNotSpecified, head.get_status_n_comment().c_str(), __FUNCTION__, oe);
+	}
+}
 
 
 } // namespace service

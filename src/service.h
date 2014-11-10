@@ -30,6 +30,12 @@ public:
 		_key.set_key(id, secret);
 	}
 
+	// Verify user key
+	// Returns:
+	//	1. InvalidAccessKeyID - ID not exists
+	//  2. Forbidden - ID exists, but secret wrong
+	bool verify_user();
+
 	bool list_buckets();
 
 private:
