@@ -1,6 +1,8 @@
 #include <string>
 #include <vector>
 #include <sstream>
+#include <regex>
+#include <cstring>
 
 #include <tinyxml2/tinyxml2.h>
 
@@ -32,17 +34,17 @@ namespace object{
 
 	}
 
-	bool oject::connect()
+	bool object::connect()
 	{
 		return _http.connect(_endpoint.ip().c_str(), _endpoint.port());
 	}
 
-	bool oject::disconnect()
+	bool object::disconnect()
 	{
 		return _http.disconnect();
 	}
 
-	bool oject::delete_object(const char* obj)
+	bool object::delete_object(const char* obj)
 	{
 		if (!obj || !*obj)
 			throw ossexcept(ossexcept::kConflict, "Object must have a valid name.", __FUNCTION__);
@@ -112,6 +114,112 @@ namespace object{
 
 		return true;
 	}
+
+	bool object::get_object(const char* obj, stream::ostream& os, const std::string& range/*=""*/, const std::string& unmodified_since/*=""*/)
+	{
+		//----------------------------------Argument Checking-------------------------------------
+		if (!obj || !* obj || !is_object_name_valid(obj)) throw ossexcept(ossexcept::kInvalidArgs, "Invalid argument: obj", __FUNCTION__);
+
+		if (range.size()){
+			std::regex re_range(R"(\d-\d)");
+			if (!std::regex_match(range, re_range))
+				throw ossexcept(ossexcept::kInvalidArgs, "Invalid argument: range", __FUNCTION__);
+			else{
+				int s, e;
+				if (sscanf(range.c_str(), "%d-%d", &s, &e) != 2
+					|| s < 0 || e < 0
+					|| s > e)
+				{
+					throw ossexcept(ossexcept::kInvalidArgs, "Invalid argument: range", __FUNCTION__);
+				}
+			}
+
+
+			std::regex re_gmt(R"([A-Z]{1}[a-z]{2}, [0-9]{2} [A-Z]{1}[a-z]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} GMT)");
+			if (!std::regex_match(unmodified_since, re_gmt))
+				throw ossexcept(ossexcept::kInvalidArgs, "Invalid argument: unmodified_since", __FUNCTION__);
+
+		}
+
+		//---------------------------- Requesting----------------------------------
+		connect();
+
+		std::stringstream ss;
+
+		auto& head = _http.head();
+		head.clear();
+
+		// Verb
+		ss.clear(); ss.str("");
+		// TODO: url-encoding
+		ss << "GET /" << obj << " HTTP/1.1";
+		head.set_verb(std::string(ss.str()).c_str());
+
+		// Host
+		ss.clear(); ss.str("");
+		ss << _bkt.name() << '.' << _bkt.location() << ".aliyuncs.com";
+		head.add_host(std::string(ss.str()).c_str());
+
+		//Date
+		std::string date(gmt_time());
+		head.add_date(date.c_str());
+
+		// Authorization
+		ss.clear(); ss.str("");
+		ss << "GET\n";
+		ss << "\n\n";
+		ss << date << "\n";
+		ss << "/" << _bkt.name() << "/" << obj; // TODO: url-encoding
+		head.add_authorization(signature(_key, std::string(ss.str())).c_str());
+
+		// Range & Unmodified-Since
+		if (range.size()){
+			ss.clear(); ss.str("");
+			ss << "bytes=" << range;
+			head.add("Range", std::string(ss.str()).c_str());
+
+			head.add("If-Unmodified-Since", unmodified_since.c_str());
+		}
+
+		// Connection
+		head.add_connection("close");
+
+		_http.put_head();
+
+		//-------------------------------------Response--------------------------------
+		_http.get_head();
+		
+		auto& status = head.get_status();
+		if (status == "200"){
+			_http.get_body(os);
+			disconnect();
+			return true;
+		}
+		else if (status == "412"){
+			throw ossexcept(ossexcept::kNotSpecified, head.get_status_n_comment().c_str(), __FUNCTION__);
+			disconnect();
+		}
+		else if (status == "404"){
+			http::str_body_ostream bs;
+			_http.get_body(bs);
+			disconnect();
+
+			auto oe = new osserr((char*)bs.data(), bs.size());
+			throw ossexcept(ossexcept::kNotFound, head.get_status_n_comment().c_str(), __FUNCTION__, oe);
+		}
+		else{
+			disconnect();
+			throw ossexcept(ossexcept::kUnhandled, head.get_status_n_comment().c_str(), __FUNCTION__);
+		}
+	}
+
+	// not implemented
+	bool object::is_object_name_valid(const char* obj)
+	{
+		return true;
+	}
+
+
 
 
 

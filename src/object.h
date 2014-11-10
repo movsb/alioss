@@ -38,9 +38,9 @@ namespace object {
 		};
 	}
 
-class oject{
+class object{
 public:
-	oject(
+	object(
 		const accesskey& key,
 		const meta::bucket& bkt,
 		const socket::endpoint& ep
@@ -54,7 +54,29 @@ public:
 	bool connect();
 	bool disconnect();
 
+	/*--------------------------------------------------------------------
+	@desc Get(download) an object from specified `range', and writes it to `os'
+	@param obj: the name of the object that you want to get.
+		Must be url-encoded, and be UTF-8-ed.
+		No prefix '/'
+	@param os: the ostream which get_object() writes data to.
+	@param range: returns data from this range: [<start>-<end>], or leave it empty 
+	@param unmodified_since: if `range', `'unmodified_since' checks whether the object
+			has not been modified since that time, and if so, get operation is starting.
+			else, get_object() throws object_error:: Precondition failed.
+		it has GMT time format.
+	--------------------------------------------------------------------*/
+	bool get_object(const char* obj, stream::ostream& os,
+		const std::string& range="", const std::string& unmodified_since="");
+
+	/// Delete an `object' from specified `bucket'
+	// If the `obj' is empty, the function works exactly
+	// like bucket::delete_bcket(), and because there are
+	// objects exist, it throws `BucketNotEmpty' exception instead.
 	bool delete_object(const char* obj);
+
+protected:
+	bool is_object_name_valid(const char* obj);
 
 protected: // shared objects
 	const accesskey& _key;
