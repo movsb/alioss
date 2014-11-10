@@ -36,7 +36,31 @@ int main()
 
 		http::str_body_ostream bs;
 		object::object obj(key, mbkt, ep);
-		obj.get_object(".gitignore", bs);
+
+		class str_istream :public stream::istream{
+		public:
+			explicit str_istream(const std::string& str)
+				: _str(str), _pos(0)
+			{}
+
+			virtual int read_some(unsigned char* buf, int sz){
+				sz = sz > size() ? size() : sz;
+				::memcpy(buf, _str.c_str() + _pos, sz);
+				_pos += sz;
+				return sz;
+			}
+
+			virtual int size() const{
+				return _str.size()-_pos;
+			}
+		protected:
+			int _pos;
+			const std::string& _str;
+		};
+
+		std::string str("text_content");
+		str_istream si(str);
+		obj.put_object("ddd", si);
 
 		cterm.restore();
 	}
