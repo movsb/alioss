@@ -1,4 +1,3 @@
-#include <stdexcept>
 #include <iostream>
 #include <memory>
 
@@ -9,6 +8,7 @@
 #include "socket.h"
 #include "misc/stream.h"
 #include "service.h"
+#include "osserror.h"
 
 namespace alioss{
 
@@ -26,27 +26,20 @@ bool service::disconnect()
 	return _http.disconnect();
 }
 
-bool service::query()
+bool service::list_buckets()
 {
-	request();
-	response();
+	connect();
 
-	return true;
-}
-
-bool service::request()
-{
 	auto& head = _http.head();
 	head.clear();
 
-	std::string str;
 	std::stringstream ss;
 
+	//---------------------------- Requesting----------------------------------
 	// Verb
-	ss.clear();
+	ss.clear(); ss.str("");
 	ss << "GET / HTTP/1.1";
-	str = ss.str();
-	head.set_verb(str.c_str());
+	head.set_verb(std::string(ss.str()).c_str());
 
 	// Host
 	head.add_host("oss.aliyuncs.com");
@@ -62,60 +55,55 @@ bool service::request()
 	sigstr += date + "\n";	// GMT Date/Time
 	sigstr += "/";			// Resource
 
-	std::string authstr(signature(_key, sigstr));
-	head.add_authorization(authstr.c_str());
+	head.add_authorization(signature(_key, sigstr).c_str());
 
 	// Connection
 	head.add_connection("close");
 
-	return _http.put_head();
-}
+	_http.put_head();
 
-bool service::response()
-{
+	//-------------------------------------Response--------------------------------
 	_http.get_head();
 
-	std::unique_ptr<http::str_body_ostream> pbs(new http::str_body_ostream);
-	_http.get_body(*pbs);
-	parse_response_body((char*)pbs->data(), pbs->size());
-	
-	return true;
-}
+	http::str_body_ostream bs;
+	_http.get_body(bs);
 
-bool service::parse_response_body(const char* data, int size)
-{
-	tinyxml2::XMLDocument xmldoc;
-	try{
-		if (xmldoc.Parse(data, size_t(size)) != tinyxml2::XMLError::XML_NO_ERROR)
-			throw std::runtime_error("[error] " __FUNCTION__ ": xml not well-formed");
+	disconnect();
+
+	auto& status = head.get_status();
+	if (status == "200") {
+		tinyxml2::XMLDocument xmldoc;
+		if (xmldoc.Parse((char*)bs.data(), bs.size()) != tinyxml2::XMLError::XML_NO_ERROR)
+			throw ossexcept(ossexcept::kXmlError, "Xml not well-formed", __FUNCTION__);
 
 		auto buckets_result = xmldoc.FirstChildElement("ListAllMyBucketsResult");
-		if (buckets_result == nullptr)
-			throw std::runtime_error("[error] " __FUNCTION__ ": node 'ListAllMyBucketsResult' not been found");
 
 		tinyxml2::XMLHandle handle_owner(buckets_result->FirstChildElement("Owner"));
 		_owner.set_id(handle_owner.FirstChildElement("ID").FirstChild().ToText()->Value());
 		_owner.set_display_name(handle_owner.FirstChildElement("DisplayName").FirstChild().ToText()->Value());
 
 		auto node_buckets = buckets_result->FirstChildElement("Buckets");
-		for (auto node = node_buckets->FirstChildElement("Bucket");
-			node != nullptr;
-			node = node->NextSiblingElement("Bucket"))
-		{
-			tinyxml2::XMLHandle handle_bucket(node);
-			auto& newbkt = bucket_create();
-			newbkt.set_name(handle_bucket.FirstChildElement("Name").FirstChild().ToText()->Value());
-			newbkt.set_location(handle_bucket.FirstChildElement("Location").FirstChild().ToText()->Value());
-			newbkt.set_creation_date(handle_bucket.FirstChildElement("CreationDate").FirstChild().ToText()->Value());
+		if(node_buckets != nullptr){
+			for (auto node = node_buckets->FirstChildElement("Bucket");
+				node != nullptr;
+				node = node->NextSiblingElement("Bucket"))
+			{
+				tinyxml2::XMLHandle handle_bucket(node);
+				auto& newbkt = bucket_create();
+				newbkt.set_name(handle_bucket.FirstChildElement("Name").FirstChild().ToText()->Value());
+				newbkt.set_location(handle_bucket.FirstChildElement("Location").FirstChild().ToText()->Value());
+				newbkt.set_creation_date(handle_bucket.FirstChildElement("CreationDate").FirstChild().ToText()->Value());
+			}
 		}
 
+		return true;
 	}
-	catch(...){
-		throw;
+	else{
+		auto oe = new osserr(bs.data(), bs.size());
+		throw ossexcept(ossexcept::kNotSpecified, head.get_status_n_comment().c_str(), __FUNCTION__, oe);
 	}
-	
-	return true;
 }
+
 
 
 } // namespace service

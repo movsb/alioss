@@ -30,13 +30,7 @@ public:
 		_key.set_key(id, secret);
 	}
 
-	bool query();
-
-protected:
-	bool request();
-	bool response();
-
-	bool parse_response_body(const char* data, int size);
+	bool list_buckets();
 
 private:
 	// avoid copy-ctor on vector::push_back()
