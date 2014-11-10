@@ -228,21 +228,28 @@ bool http::put_body(const void* data, size_t sz)
 
 bool http::put_body(stream::istream& is)
 {
+	return put_body(is, [](const unsigned char* data, int sz){});
+}
+
+bool http::put_body(stream::istream& is, std::function<void(const unsigned char* data, int sz)> hash)
+{
 	try{
 		while (is.size()){
 			unsigned char buf[1024];
 			auto sz = is.read_some(buf, sizeof(buf));
 			if (sz != -1){
+				hash(buf, sz);
 				put_body(buf, sz);
 			}
 		}
 	}
-	catch(...){
+	catch (...){
 		throw std::runtime_error("[error] http::put_body()");
 	}
-	
+
 	return true;
 }
+
 
 bool http::get_body(void* data, size_t sz)
 {

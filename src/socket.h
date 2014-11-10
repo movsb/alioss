@@ -4,6 +4,7 @@
 #include <cstring>
 #include <string>
 #include <vector>
+#include <functional>
 
 #ifdef _WIN32
 
@@ -316,6 +317,24 @@ public:
 		return add("Authorization", val);
 	}
 
+	bool add_content_length(size_t len){
+		char buf[32];
+		sprintf(buf, "%u", len);
+		return add("Content-Length", buf);
+	}
+
+	bool add_content_type(const char* type){
+		return add("Content-Type", type);
+	}
+
+	bool add_content_disposition(const char* val){
+		return add("Content-Disposition", val);
+	}
+
+	bool add_content_encoding(const char* val){
+		return add("Content-Encoding", val);
+	}
+
 	bool remove(const char* key){
 		for(auto it=_items.begin(); it!=_items.end();){
 			if(it->get_key() == key){
@@ -363,6 +382,7 @@ public:
 	int  get_body_len();
 	bool put_body(const void* data, size_t sz);
 	bool put_body(stream::istream& is);
+	bool put_body(stream::istream& is, std::function<void(const unsigned char* data, int sz)> hash);
 	bool get_body(void* data, size_t sz);
 	bool get_body(stream::ostream& os);
 
