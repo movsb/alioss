@@ -75,6 +75,11 @@ public:
 	// objects exist, it throws `BucketNotEmpty' exception instead.
 	bool delete_object(const char* obj);
 
+	bool put_object(const char* obj, stream::istream& is,
+					const char* content_type="",
+					const char* content_disposition="",
+					const char* content_encoding="");
+
 protected:
 	bool is_object_name_valid(const char* obj);
 

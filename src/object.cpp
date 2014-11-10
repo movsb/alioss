@@ -10,6 +10,7 @@
 #include "misc/time.h"
 #include "object.h"
 #include "osserror.h"
+#include "crypto/crypto.h"
 
 namespace alioss {
 namespace object{
@@ -218,6 +219,88 @@ namespace object{
 	{
 		return true;
 	}
+
+	bool object::put_object(const char* obj, stream::istream& is, 
+		const char* content_type/*=""*/, const char* content_disposition/*=""*/, 
+		const char* content_encoding/*=""*/)
+	{
+		//----------------------------------Argument Checking-------------------------------------
+		if (!obj || !* obj || !is_object_name_valid(obj)) throw ossexcept(ossexcept::kInvalidArgs, "Invalid argument: obj", __FUNCTION__);
+
+		//---------------------------- Requesting----------------------------------
+		connect();
+
+		std::stringstream ss;
+
+		auto& head = _http.head();
+		head.clear();
+
+		// Verb
+		ss.clear(); ss.str("");
+		// TODO: url-encoding
+		ss << "PUT /" << obj << " HTTP/1.1";
+		head.set_verb(std::string(ss.str()).c_str());
+
+		// Content-Length & Content-Type && Content-Disposition && Content-Encoding
+		head.add_content_length(is.size());
+		if (!content_type || !*content_type) content_type = "text/json";
+		head.add_content_type(content_type);
+		if (content_disposition && *content_disposition)
+			head.add_content_disposition(content_disposition);
+		if (content_encoding && *content_encoding)
+			head.add_content_encoding(content_encoding);
+
+		// Host
+		ss.clear(); ss.str("");
+		ss << _bkt.name() << '.' << _bkt.location() << ".aliyuncs.com";
+		head.add_host(std::string(ss.str()).c_str());
+
+		//Date
+		std::string date(gmt_time());
+		head.add_date(date.c_str());
+
+		// Authorization
+		ss.clear(); ss.str("");
+		ss << "PUT\n";
+		ss << "\n";
+		ss << content_type << "\n";
+		ss << date << "\n";
+		ss << "/" << _bkt.name() << "/" << obj; // TODO: url-encoding
+		head.add_authorization(signature(_key, std::string(ss.str())).c_str());
+
+		// Connection
+		head.add_connection("close");
+
+		_http.put_head();
+
+		crypto::cmd5 body_md5;
+		_http.put_body(is, [&](const unsigned char* data, int sz){
+			body_md5.update(data, sz);
+		});
+		body_md5.finish();
+
+		//-------------------------------------Response--------------------------------
+		http::str_body_ostream bs;
+		_http.get_head();
+		_http.get_body(bs);
+		disconnect();
+
+		auto& status = head.get_status();
+		if (status == "200"){
+			std::string etag;
+			if (head.get("ETag", &etag) && etag.size()>2){
+				if (body_md5.str() != std::string(etag.c_str() + 1, 32)){
+					throw ossexcept(ossexcept::kInvalidCheckSum, etag.c_str(), __FUNCTION__);
+				}
+			}
+			return true;
+		}
+
+		else{
+			throw ossexcept(ossexcept::kUnhandled, head.get_status_n_comment().c_str(), __FUNCTION__);
+		}
+	}
+
 
 
 
