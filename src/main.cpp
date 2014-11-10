@@ -17,7 +17,7 @@ int main()
 	socket::wsa_instance wsa;
 
 	meta::bucket mbkt;
-	mbkt.set_name("twofei32");
+	mbkt.set_name("twofei2");
 	mbkt.set_location("oss-cn-hangzhou");
 
 	accesskey key;
@@ -34,9 +34,9 @@ int main()
 	try {
 		color_term::color_term cterm;
 
-		service::service svc;
-		svc.set_key(key.key().c_str(), key.secret().c_str());
-		svc.verify_user();
+		http::str_body_ostream bs;
+		object::object obj(key, mbkt, ep);
+		obj.get_object(".gitignore", bs);
 
 		cterm.restore();
 	}
