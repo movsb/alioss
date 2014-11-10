@@ -21,7 +21,7 @@ int main()
 	mbkt.set_location("oss-cn-hangzhou");
 
 	accesskey key;
-	key.set_key("GADlpO6YWiTjXpYr", "42jHJIeiasJFIEjfwLKfE4uOxhacZbiferMYn8nADQygd4");
+	key.set_key("GADlpO6YWiTjXpYr", "YF42jHE4uOxhacZbiferMYn8nADQygd4");
 
 	socket::resolver resolver;
 	resolver.resolve("oss.aliyuncs.com", "http");
@@ -36,7 +36,7 @@ int main()
 
 		service::service svc;
 		svc.set_key(key.key().c_str(), key.secret().c_str());
-		svc.list_buckets();
+		svc.verify_user();
 
 		cterm.restore();
 	}
