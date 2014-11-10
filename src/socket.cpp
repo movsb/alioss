@@ -216,13 +216,19 @@ bool http::get_line(std::string* line, bool crlf){
 
 bool http::put_body(const void* data, size_t sz)
 {
+	return put_body(data, sz, [](const unsigned char*,int){});
+}
+
+bool http::put_body(const void* data, size_t sz, std::function<void(const unsigned char* data, int sz)> hash)
+{
 	try{
+		hash((unsigned char*)data, sz);
 		send(data, sz);
 	}
-	catch(...){
+	catch (...){
 		throw std::runtime_error("[error] http::put_body()");
 	}
-	
+
 	return true;
 }
 
