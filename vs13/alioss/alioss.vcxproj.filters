@@ -81,6 +81,9 @@
     <ClCompile Include="..\..\src\object.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\misc\strutil.cpp">
+      <Filter>Source Files\misc</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\accesskey.h">
@@ -133,6 +136,9 @@
     </ClInclude>
     <ClInclude Include="..\..\src\object.h">
       <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\misc\strutil.h">
+      <Filter>Source Files\misc</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
