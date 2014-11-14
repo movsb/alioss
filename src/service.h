@@ -20,15 +20,14 @@ namespace service{
 
 class service {
 public:
-	service()
-	{}
+	service(const accesskey& key, const socket::endpoint& ep)
+		: _key(key)
+	{
+		_endpoint.set_ep(ep.ip().c_str(), ep.port());
+	}
 	
 	bool connect();
 	bool disconnect();
-
-	void set_key(const char* id, const char* secret){
-		_key.set_key(id, secret);
-	}
 
 	// Verify user key
 	// Returns:
@@ -37,6 +36,9 @@ public:
 	bool verify_user();
 
 	bool list_buckets();
+
+	const std::vector<meta::bucket>& buckets() { return _buckets; }
+	void dump_buckets(std::function<void(int i, const meta::bucket& bkt)> dumper);
 
 private:
 	// avoid copy-ctor on vector::push_back()
@@ -58,6 +60,7 @@ protected:
 
 protected:
 	accesskey	_key;
+	socket::endpoint _endpoint;
 	http::http	_http;
 };
 

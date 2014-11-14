@@ -28,6 +28,8 @@ bool service::disconnect()
 
 bool service::list_buckets()
 {
+	_buckets.clear();
+
 	connect();
 
 	auto& head = _http.head();
@@ -116,6 +118,7 @@ bool service::verify_user()
 	//---------------------------- Requesting----------------------------------
 	// Verb
 	ss.clear(); ss.str("");
+	// TODO: max-keys seems not working?
 	ss << "GET /?max-keys=0 HTTP/1.1"; // max-keys set, different from list_buckets()
 	head.set_verb(std::string(ss.str()).c_str());
 
@@ -157,6 +160,15 @@ bool service::verify_user()
 		throw ossexcept(ossexcept::kNotSpecified, head.get_status_n_comment().c_str(), __FUNCTION__, oe);
 	}
 }
+
+void service::dump_buckets(std::function<void(int i, const meta::bucket& bkt)> dumper)
+{
+	int i = 0;
+	for (auto& b : _buckets){
+		dumper(++i, b);
+	}
+}
+
 
 
 } // namespace service
