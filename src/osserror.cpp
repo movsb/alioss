@@ -64,6 +64,7 @@ void osserr::dump(std::function<void(const std::string&)> dumper)
 void ossexcept_stderr_dumper(ossexcept& e){
 	color_term::color_term cterm;
 
+	std::cerr << "\n";
 	std::cerr << cterm(12,-1) << "-->Dumping osserr:\n" << cterm.restore();
 	e.dump_osserr([](const std::string& s){
 		std::cerr << "    " << s << std::endl;
