@@ -79,6 +79,9 @@ public:
 	void dump_objects(std::function<bool(int i, const meta::content& object)> dumper);
 	void dump_folders(std::function<bool(int i, const std::string& folder)> dumper);
 
+	const std::vector<meta::content>& contents() { return _contents; }
+	const std::vector<std::string>& folders() { return _common_prefixes; }
+
 protected:
 	meta::content& create_content(){
 		_contents.push_back(meta::content());
