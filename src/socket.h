@@ -26,15 +26,60 @@ namespace alioss {
 
 namespace socket {
 
-class wsa_instance {
+	typedef int socketexcept_code;
+
+	const socketexcept_code kWSAStartupError		= -1;
+	const socketexcept_code kGetAddrInfo			= -2;
+	const socketexcept_code kSocket = -3;
+	const socketexcept_code kConnect = -4;
+	const socketexcept_code kSend = -5;
+	const socketexcept_code kRecv = -6;
+	const socketexcept_code kShutdownGracefully = -7;
+	const socketexcept_code kContentLengthMissing = -8;
+	const socketexcept_code kGetLine = -9;
+	const socketexcept_code kBufferTooSmall = -10;
+
+class socketexcept {
 public:
-	wsa_instance()
-		: _b_inited(false)
+	socketexcept(socketexcept_code code, const char* errmsg, const char* errfunc = nullptr)
+		: _code(code), _what(errmsg)
 	{
-		init();
+		if (errfunc){
+			_stack.push_back(errfunc);
+		}
 	}
 
-	~wsa_instance()
+	~socketexcept(){
+	}
+
+	void dump_stack(std::function<void(int i, const std::string&)> dumper){
+		int i = _stack.size();
+		for (auto& s : _stack){
+			dumper(i--, s);
+		}
+	}
+
+	socketexcept_code code() { return _code; }
+	std::string what() { return _what; }
+	std::vector<std::string>& stack() { return _stack; }
+	void push_stack(const char* func) { _stack.push_back(func); }
+
+protected:
+	std::vector<std::string> _stack;
+	std::string				_what;
+	socketexcept_code 		_code;
+};
+
+void socketerror_stderr_dumper(socketexcept& e);
+
+class wsa {
+public:
+	wsa()
+		: _b_inited(false)
+	{
+	}
+
+	~wsa()
 	{
 		uninit();
 	}
@@ -43,7 +88,7 @@ public:
 	bool init() {
 		::WSAData wsa;
 		if (::WSAStartup(MAKEWORD(2, 2), &wsa) != 0){
-			throw std::runtime_error("[error] WSAStartup()");
+			throw socketexcept(kWSAStartupError, "[error] WSAStartup() failed", __FUNCTION__);
 		}
 		_b_inited = true;
 		return true;
@@ -62,8 +107,8 @@ protected:
 
 class endpoint {
 public:
-	const std::string& ip() { return _ip; }
-	int port() { return _port; }
+	const std::string& ip() const { return _ip; }
+	int port() const { return _port; }
 
 	void set_ep(const char* ip, int port){
 		_ip = ip;

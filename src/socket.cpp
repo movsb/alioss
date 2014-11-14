@@ -5,6 +5,8 @@
 #include <sstream>
 #include <iostream>
 
+#include "misc/color_term.h"
+
 #ifdef _WIN32
 
 #else 
@@ -36,8 +38,7 @@ namespace socket {
 			_paddr = nullptr;
 			_size = 0;
 
-			throw std::runtime_error("[error] getaddrinfo()");
-			return false;
+			throw socketexcept(kGetAddrInfo, "[error] getaddrinfo() failed.", __FUNCTION__);
 		}
 
 		_paddr = pres;
@@ -52,8 +53,7 @@ namespace socket {
 	// socket
 	bool socket::connect(const char* ip, int port){
 		_sockfd = ::socket(PF_INET, SOCK_STREAM, IPPROTO_TCP); if (_sockfd == -1){
-			throw std::runtime_error("[error] socket::connect()");
-			return false;
+			throw socketexcept(kSocket, "[error] socket error.", __FUNCTION__);
 		}
 
 		struct sockaddr_in remote = { 0 };
@@ -68,8 +68,7 @@ namespace socket {
 #else
 			::close(_sockfd);
 #endif
-			throw std::runtime_error("[error] socket::connect()");
-			return false;
+			throw socketexcept(kConnect, "[error] connection to host failed.", __FUNCTION__);
 		}
 
 		set_alive(true);
@@ -96,7 +95,7 @@ namespace socket {
 			while (n < sz){
 				size_t sent = ::send(_sockfd, (char*)data + n, sz - n, 0);
 				if (sent == (size_t)-1){
-					throw std::runtime_error("[error] socket::send()");
+					throw socketexcept(kSend, "[error] socket::send() failed", __FUNCTION__);
 				}
 				n += sent;
 			}
@@ -116,11 +115,11 @@ namespace socket {
 			while (n < sz){
 				size_t read = ::recv(_sockfd, (char*)buf + n, sz - n, 0);
 				if (read == size_t(-1)){
-					throw std::runtime_error("[error] socket::recv() returns -1");
+					throw socketexcept(kRecv, "[error] socket::recv() returns -1", __FUNCTION__);
 				}
 				else if (read == 0){ // shutdown gracefully
 					gracefully = true;
-					throw std::runtime_error("[error] socket::recv() returns  0");
+					throw socketexcept(kShutdownGracefully, "[error] socket has been shut down gracefully.", __FUNCTION__);
 				}
 				else{
 					n += read;
@@ -140,6 +139,20 @@ namespace socket {
 		}
 		return n;
 	}
+
+	void socketerror_stderr_dumper(socketexcept& e)
+	{
+		color_term::color_term cterm;
+		std::cerr << cterm(12, -1) << "---> socketexcept:\n" << cterm(-1, -1);
+		std::cerr << "    code: " << e.code() << std::endl;
+		std::cerr << "    what: " << e.what() << std::endl;
+
+		std::cerr << cterm(12, -1) << "---> socket stack:\n" << cterm(-1, -1);
+		e.dump_stack([&](int i, const std::string& s){
+			std::cerr << "    " << cterm(2, -1) << i << cterm(-1, -1) << ": " << s << std::endl;
+		});
+	}
+
 
 } // namespace socket
 
@@ -183,7 +196,7 @@ int http::get_body_len()
 		return ::atoi(len.c_str());
 	}
 
-	throw std::runtime_error("[error] http::get_body_len(): field missing.");
+	throw alioss::socket::socketexcept(alioss::socket::kContentLengthMissing, "http::get_body_len() fails due to no such field.", __FUNCTION__);
 }
 
 // crlf is discarded
@@ -203,7 +216,7 @@ bool http::get_line(std::string* line, bool crlf){
 					break;
 				}
 
-				throw std::runtime_error("[error] http::get_line()");
+				throw alioss::socket::socketexcept(alioss::socket::kGetLine, "[error] http::get_line() fails due to '\n' missing.", __FUNCTION__);
 			}
 			else{
 				*line += c;
@@ -225,8 +238,9 @@ bool http::put_body(const void* data, size_t sz, std::function<void(const unsign
 		hash((unsigned char*)data, sz);
 		send(data, sz);
 	}
-	catch (...){
-		throw std::runtime_error("[error] http::put_body()");
+	catch (alioss::socket::socketexcept& e){
+		e.push_stack(__FUNCTION__);
+		throw;
 	}
 
 	return true;
@@ -249,8 +263,9 @@ bool http::put_body(stream::istream& is, std::function<void(const unsigned char*
 			}
 		}
 	}
-	catch (...){
-		throw std::runtime_error("[error] http::put_body()");
+	catch (alioss::socket::socketexcept& e){
+		e.push_stack(__FUNCTION__);
+		throw;
 	}
 
 	return true;
@@ -263,7 +278,7 @@ bool http::get_body(void* data, size_t sz)
 	char* p = reinterpret_cast<char*>(data);
 
 	if (len != int(sz)){
-		throw std::runtime_error("[error] http::get_body(): buffer overflow");
+		throw alioss::socket::socketexcept(alioss::socket::kBufferTooSmall, "[error] http::get_body(): buffer overflow");
 	}
 
 	return recv(p, sz)==sz;
