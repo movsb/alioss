@@ -5,6 +5,7 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
+#include <functional>
 
 #include "osserror.h"
 #include "service.h"
@@ -159,22 +160,22 @@ int main()
 				else if (thecmd == "enter"){
 					int id = 0;
 					if (arg.size() == 0 || (id=atoi(arg.c_str())) <= 0 || id>(int)svc.buckets().size()){
-						std::cout << "enter - 无效的bucket编号!\n";
+						std::cout << "enter - Invalid bucket ID!\n";
 						goto next_cmd;
 					}
 
 					auto la_command_bucket = [&](){
 						std::cout << cterm(2, -1) << "Commands for: " << "Bucket\n" << cterm(-1, -1);
 						std::cout
-							<< "    list            枚举当前目录的对象(文件和目录)\n"
-							<< "    cd [dir]        进入某个子目录(不要加最后的'/', 只支持一级跳转)\n"
-							<< "    pwd             显示当前所在目录\n"
-							<< "    del <obj>       删除文件<obj>, 不存在的文件不会报错\n"
-							<< "    down <obj>      下载文件<obj>\n"
-							<< "    up <file>       上传指定的文件到当前目录\n"
-							<< "    svc             回到服务命令菜单\n"
-							<< "    quit            退出程序\n"
-							<< "    help            显示此帮助\n"
+							<< "    list            list objects in current directory\n"
+							<< "    cd [dir]        change directory (no slash('/'), no recursion)\n"
+							<< "    pwd             print working directory\n"
+							<< "    del <obj>       delete object in current directory, ignores non-exist object\n"
+							<< "    down <obj>      download object to working directory<obj>\n"
+							<< "    up <file>       upload files to current directory\n"
+							<< "    svc             back to service command\n"
+							<< "    quit            quit program\n"
+							<< "    help            show this help message\n"
 							;
 					};
 					const char* bucket_cmds[] = {
@@ -211,7 +212,7 @@ int main()
 							}
 							else if (thecmd == "quit"){
 								std::cout << "quiting...\n";
-								exit(0); // 貌似这是我第1次正式用exit.
+								exit(0);
 							}
 							else if (thecmd == "pwd"){
 								std::cout << cur_dir << std::endl;
@@ -238,7 +239,7 @@ int main()
 								auto find_dirs = [](const std::vector<std::string>& vs, const std::string& name, std::vector<int>* match)->bool{
 									bool found = false;
 									match->clear();
-									for (int i = 0; i<vs.size(); i++){
+									for (int i = 0; (int)i<vs.size(); i++){
 										if (vs[i].find(name) == 0){
 											match->push_back(i);
 											if (vs[i].size() == name.size()+1){
@@ -255,8 +256,8 @@ int main()
 									cur_dir += bucket.folders()[matchdirs.back()].c_str() + cur_dir.size()-1;
 								}
 								else{
-									std::cout << "未找到该目录: " << cterm(4, -1) << arg << cterm(-1, -1);
-									if (matchdirs.size()) std::cout << ", 你是否要找: \n";
+									std::cout << "No such folder: " << cterm(4, -1) << arg << cterm(-1, -1);
+									if (matchdirs.size()) std::cout << ", do you mean: \n";
 									else std::cout << "\n";
 
 									for (auto& m : matchdirs){
@@ -270,13 +271,13 @@ int main()
 							else if (thecmd == "list"){
 								bucket.list_objects(cur_dir.c_str()+1);
 
-								std::cout << cterm(7, 2) << "目录:\n" << cterm(-1, -1);
+								std::cout << cterm(7, 2) << "Folders:\n" << cterm(-1, -1);
 								bucket.dump_folders([&](int i, const std::string& folder)->bool{
 									std::cout << "    " << folder.c_str()+cur_dir.size()-1 << std::endl;
 									return true;
 								});
 
-								std::cout << cterm(7, 2) << "文件:\n" << cterm(-1, -1);
+								std::cout << cterm(7, 2) << "Files:\n" << cterm(-1, -1);
 								bucket.dump_objects([&](int i, const meta::content& obj)->bool{
 									if (obj.key().back() == '/'){
 										// ignore current directory
@@ -289,7 +290,7 @@ int main()
 							}
 							else if (thecmd == "del"){
 								if (arg.size() == 0 || arg.find('/') != std::string::npos){
-									std::cout << "请指定待删除的文件名(不包含目录)\n";
+									std::cout << "Plz specify the object name you want to delete\n";
 									goto next_bucket_cmd;
 								}
 
@@ -303,7 +304,7 @@ int main()
 							}
 							else if (thecmd == "down"){
 								if (arg.size() == 0 || arg.find('/') != std::string::npos){
-									std::cout << "请正确指定待下载的文件名(不包含目录)\n";
+									std::cout << "Plz correctly specify the object name\n";
 									goto next_bucket_cmd;
 								}
 
@@ -337,14 +338,14 @@ int main()
 
 								file_ostream fos;
 								if (!fos.open(arg.c_str())){
-									std::cout << "无法打开本地文件 `" << arg << "' 用于写!\n";
+									std::cout << "Cannot open file `" << arg << "' for writing\n";
 									goto next_bucket_cmd;
 								}
 
 								object::object object(key, bkt, ep);
 								try{
 									object.get_object((cur_dir+arg).c_str()+1, fos);
-									std::cout << "下载成功!\n";
+									std::cout << "Download completed\n";
 								}
 								catch (ossexcept& e){
 									ossexcept_stderr_dumper(e);
@@ -352,7 +353,7 @@ int main()
 							}
 							else if (thecmd == "up"){
 								if (arg.size() == 0 ){
-									std::cout << "请正确指定待下载的文件名\n";
+									std::cout << "Plz correctly specify the file name you want to upload\n";
 									goto next_bucket_cmd;
 								}
 
@@ -392,7 +393,7 @@ int main()
 
 								file_istream fis;
 								if (!fis.open(arg.c_str())){
-									std::cout << "无法打开本地文件 `" << arg << "' 用于读!\n";
+									std::cout << "Cannot open file `" << arg << "' for reading!\n";
 									goto next_bucket_cmd;
 								}
 
@@ -417,7 +418,7 @@ int main()
 								object::object object(key, bkt, ep);
 								try{
 									object.put_object(get_file_name(arg).c_str(), fis);
-									std::cout << "上传成功!\n";
+									std::cout << "Upload succeeded!\n";
 								}
 								catch (ossexcept& e){
 									ossexcept_stderr_dumper(e);
@@ -425,8 +426,8 @@ int main()
 							}
 						}
 						else{
-							std::cout << "未找到合适的命令: " << cterm(4, -1) << cmd << cterm(-1, -1);
-							if (match.size()) std::cout << ", 你是否要找: \n";
+							std::cout << "Command not found: " << cterm(4, -1) << cmd << cterm(-1, -1);
+							if (match.size()) std::cout << ", did you mean: \n";
 							else std::cout << "\n";
 
 							for (auto& m : match){
@@ -446,8 +447,8 @@ int main()
 				}
 			}
 			else{
-				std::cout << "未找到合适的命令: " << cterm(4, -1) << cmd << cterm(-1, -1);
-				if(match.size()) std::cout << ", 你是否要找: \n";
+				std::cout << "Command not found: " << cterm(4, -1) << cmd << cterm(-1, -1);
+				if(match.size()) std::cout << ", did you mean: \n";
 				else std::cout << "\n";
 
 				for (auto& m : match){
