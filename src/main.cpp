@@ -427,7 +427,7 @@ int main()
 							else std::cout << "\n";
 
 							for (auto& m : match){
-								std::cout << "\t" << service_cmds[m] << "\n";
+								std::cout << "\t" << bucket_cmds[m] << "\n";
 							}
 						}
 					next_bucket_cmd:;
