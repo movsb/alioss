@@ -30,7 +30,7 @@ namespace bucket_error{
 
 	void invalid_location_constraint::dump(std::function<void(const std::string&)> dumper)
 	{
-		__super::dump(dumper);
+		osserr::dump(dumper);
 
 		dumper(std::string("LocationConstraint: ") + _location);
 	}
@@ -45,7 +45,7 @@ namespace bucket_error{
 
 	void invalid_bucket_name::dump(std::function<void(const std::string&)> dumper)
 	{
-		__super::dump(dumper);
+		osserr::dump(dumper);
 
 		dumper(std::string("BucketName: ") + _bucket_name);
 	}
