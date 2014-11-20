@@ -248,8 +248,8 @@ int main()
 								};
 
 								std::vector<int> matchdirs;
-								if (find_dirs(bucket.folders(), arg, &matchdirs) || matchdirs.size() == 1){
-									cur_dir += bucket.folders()[matchdirs.back()];
+								if (find_dirs(bucket.folders(), std::string(cur_dir.c_str()+1+arg), &matchdirs) || matchdirs.size() == 1){
+									cur_dir += bucket.folders()[matchdirs.back()].c_str() + cur_dir.size()-1;
 								}
 								else{
 									std::cout << "未找到该目录: " << cterm(4, -1) << arg << cterm(-1, -1);
@@ -269,7 +269,7 @@ int main()
 
 								std::cout << cterm(7, 2) << "目录:\n" << cterm(-1, -1);
 								bucket.dump_folders([&](int i, const std::string& folder)->bool{
-									std::cout << "    " << folder.c_str() << std::endl;
+									std::cout << "    " << folder.c_str()+cur_dir.size()-1 << std::endl;
 									return true;
 								});
 
