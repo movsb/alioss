@@ -59,13 +59,16 @@ next_cmd:
 int main()
 {
 	signal(SIGINT, [](int){});
-
+#ifdef _WIN32
 	socket::wsa wsa;
+#endif
 	socket::resolver resolver;
 
 	try{
 		std::cout << "socket_init ..." << std::endl;
+#ifdef _WIN32
 		wsa.init();
+#endif
 		std::cout << "resolving oss.aliyuncs.com ...";
 		resolver.resolve("oss.aliyuncs.com", "http");
 

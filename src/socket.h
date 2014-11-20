@@ -72,6 +72,7 @@ protected:
 
 void socketerror_stderr_dumper(socketexcept& e);
 
+#ifdef _WIN32
 class wsa {
 public:
 	wsa()
@@ -104,6 +105,7 @@ public:
 protected:
 	bool _b_inited;
 };
+#endif
 
 class endpoint {
 public:
