@@ -3,6 +3,7 @@
 #include <sstream>
 #include <regex>
 #include <cstring>
+#include <functional>
 
 #include <tinyxml2/tinyxml2.h>
 
@@ -28,7 +29,7 @@ namespace object{
 
 		void no_such_bucket::dump(std::function<void(const std::string&)> dumper)
 		{
-			__super::dump(dumper);
+			osserr::dump(dumper);
 			dumper(std::string("BucketName: ") + _bucket_name);
 		}
 
