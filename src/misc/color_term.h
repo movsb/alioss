@@ -31,7 +31,7 @@ Bit color table:
 #ifndef ___color_term_h__
 #define ___color_term_h__
 
-#include <ostream>
+#include <iostream>
 
 namespace color_term{
 
@@ -39,7 +39,7 @@ namespace color_term{
 	public:
 		color(char fg, char bg, unsigned short def)
 			: _fg(fg), _bg(bg), _def(def){}
-		void operator()();
+		void operator()() const;
 	private:
 		char _fg,_bg;
 		unsigned short _def;
@@ -57,6 +57,6 @@ namespace color_term{
 
 } // namespace color_term
 
-std::ostream& operator<<(std::ostream& os, color_term::color& c);
+std::ostream& operator<<(std::ostream& os, const color_term::color& c);
 
 #endif // !___color_term_h__

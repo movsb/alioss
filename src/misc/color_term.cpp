@@ -1,4 +1,7 @@
+#ifdef _WIN32
 #include <windows.h>
+#else
+#endif
 
 #include "color_term.h"
 
@@ -6,19 +9,25 @@ namespace color_term{
 
 	static void set_attr(unsigned short a)
 	{
+#ifdef _WIN32
 		::SetConsoleTextAttribute(::GetStdHandle(STD_OUTPUT_HANDLE), (WORD)a);
+#endif
 	}
 
 	color_term::color_term()
 	{
+#ifdef _WIN32
 		::CONSOLE_SCREEN_BUFFER_INFO csbi;
 		::GetConsoleScreenBufferInfo(::GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
 		_def = static_cast<unsigned short>(csbi.wAttributes);
+#endif
 	}
 
 	void color_term::title(const char* tt)
 	{
+#ifdef _WIN32
 		::SetConsoleTitleA(tt);
+#endif
 	}
 
 	color color_term::restore()
@@ -31,7 +40,7 @@ namespace color_term{
 		return color(fg, bg, _def);
 	}
 
-	void color::operator()()
+	void color::operator()() const
 	{
 		unsigned short cr = _def & 0xFF00;
 		cr |= _fg==-1 ? _def&0x0F : _fg&0x0F;
@@ -42,7 +51,7 @@ namespace color_term{
 
 }
 
-std::ostream& operator<<(std::ostream& os, color_term::color& c)
+std::ostream& operator<<(std::ostream& os, const color_term::color& c)
 {
 	c();
 	return os;
