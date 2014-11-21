@@ -302,6 +302,32 @@ namespace object{
 		}
 	}
 
+	bool object::create_folder(const char* name)
+	{
+		class empty_istream : public stream::istream
+		{
+		public:
+			virtual int size() const{
+				return 0;
+			}
+			virtual int read_some(unsigned char* buf, int sz){
+				return 0;
+			}
+		};
+
+		try{
+			empty_istream is;
+			put_object(name, is);
+			return true;
+		}
+		catch (ossexcept& e){
+			e.push_stack(__FUNCTION__);
+			throw;
+		}
+
+		return true;
+	}
+
 
 
 

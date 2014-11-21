@@ -80,6 +80,8 @@ public:
 					const char* content_disposition="",
 					const char* content_encoding="");
 
+	bool create_folder(const char* name);
+
 protected:
 	bool is_object_name_valid(const char* obj);
 
