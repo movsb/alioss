@@ -123,7 +123,7 @@ namespace object{
 		if (!obj || !* obj || !is_object_name_valid(obj)) throw ossexcept(ossexcept::kInvalidArgs, "Invalid argument: obj", __FUNCTION__);
 
 		if (range.size()){
-			std::regex re_range(R"(\d-\d)");
+			std::regex re_range(R"(^[[:digit:]]-[[:digit:]]$)", std::regex_constants::egrep);
 			if (!std::regex_match(range, re_range))
 				throw ossexcept(ossexcept::kInvalidArgs, "Invalid argument: range", __FUNCTION__);
 			else{
@@ -137,7 +137,7 @@ namespace object{
 			}
 
 
-			std::regex re_gmt(R"([A-Z]{1}[a-z]{2}, [0-9]{2} [A-Z]{1}[a-z]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} GMT)");
+			std::regex re_gmt(R"([A-Z]{1}[a-z]{2}, [0-9]{2} [A-Z]{1}[a-z]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} GMT)", std::regex_constants::egrep);
 			if (!std::regex_match(unmodified_since, re_gmt))
 				throw ossexcept(ossexcept::kInvalidArgs, "Invalid argument: unmodified_since", __FUNCTION__);
 

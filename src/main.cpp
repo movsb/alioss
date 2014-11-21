@@ -89,8 +89,8 @@ bool read_access_key(accesskey* key)
 		ifs.getline(buf1, sizeof(buf1));
 		ifs.getline(buf2, sizeof(buf2));
 
-		std::regex re1(R"(^[a-zA-Z0-9]{16}$)");
-		std::regex re2(R"(^[a-zA-Z0-9]{30}$)");
+		std::regex re1(R"(^[a-zA-Z0-9]{16}$)", std::regex_constants::egrep);
+		std::regex re2(R"(^[a-zA-Z0-9]{30}$)", std::regex_constants::egrep);
 
 		if (!std::regex_match(buf1, re1) || !std::regex_match(buf2, re2))
 			throw std::string("Your alioss.key is invalid!");
@@ -105,8 +105,8 @@ bool read_access_key(accesskey* key)
 		std::cout << "Input access key secret: ";
 		std::getline(std::cin, keysec, '\n');
 
-		std::regex re1(R"(^[a-zA-Z0-9]{16}$)");
-		std::regex re2(R"(^[a-zA-Z0-9]{30}$)");
+		std::regex re1(R"(^[a-zA-Z0-9]{16}$)", std::regex_constants::egrep);
+		std::regex re2(R"(^[a-zA-Z0-9]{30}$)", std::regex_constants::egrep);
 
 		if (!std::regex_match(keyid, re1) || !std::regex_match(keysec, re2))
 			throw std::string("Your alioss key/sec is invalid!");
@@ -248,7 +248,7 @@ int main()
 								continue;
 							}
 
-							std::regex re(R"(^[a-z0-9]{1}[a-z0-9\-]{1,61}[a-z0-9]{1}$)");
+							std::regex re(R"(^[a-z0-9]{1}[a-z0-9\-]{1,61}[a-z0-9]{1}$)", std::regex_constants::egrep);
 							if (!std::regex_match(name, re)){
 								std::cout << cterm(4,-1)
 									<< "Sorry, invalid bucket name, constraint are:" << cterm(-1, -1) << std::endl;

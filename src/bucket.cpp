@@ -128,7 +128,7 @@ bool bucket::delete_bucket()
 
 bool bucket::create_bucket()
 {
-	if (!std::regex_match(_bkt.name(), std::regex(R"(^[a-z0-9]{1}[a-z0-9\-]{1,61}[a-z0-9]{1}$)")))
+	if (!std::regex_match(_bkt.name(), std::regex(R"(^[a-z0-9]{1}[a-z0-9\-]{1,61}[a-z0-9]{1}$)", std::regex_constants::egrep)))
 		throw ossexcept(ossexcept::kInvalidArgs, "bucket name is invalid", __FUNCTION__);
 
 	connect();
