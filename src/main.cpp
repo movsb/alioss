@@ -8,6 +8,7 @@
 #include <functional>
 #include <regex>
 
+#include "socket.h"
 #include "osserror.h"
 #include "service.h"
 #include "bucket.h"
@@ -583,6 +584,13 @@ int main()
 		e.push_stack(__FUNCTION__);
 		ossexcept_stderr_dumper(e);
 		return -1;
+	}
+	catch (socket::socketexcept& e){
+		e.push_stack(__FUNCTION__);
+		socketerror_stderr_dumper(e);
+	}
+	catch (...){
+		std::cerr << "Fatal error: unhandled exception occurred!\n";
 	}
 
 	return 0;
