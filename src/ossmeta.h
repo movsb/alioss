@@ -12,6 +12,7 @@ namespace meta {
 		const char* location;
 	};
 
+	const int oss_data_center_count = 5;
 	extern oss_data_center_s oss_data_center[];
 
 class owner {

@@ -2,7 +2,7 @@
 
 namespace alioss {
 	namespace meta{
-		oss_data_center_s oss_data_center[] =
+		oss_data_center_s oss_data_center[oss_data_center_count+1] =
 		{
 			{ "HangZhou","oss-cn-hangzhou" },
 			{ "QingDao", "oss-cn-qingdao" },
