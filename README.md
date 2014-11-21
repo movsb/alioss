@@ -8,6 +8,8 @@ alioss
 
 语言: C/C++/C++11
 
+平台: Windows/Linux
+
 联系作者
 ========
 Author  : 女孩不哭(twofei) <[QQ:191035066](http://sighttp.qq.com/authd?IDKEY=b19745b9da616a000d2db5731672dd06b575204bf1bbf9c2),[Em:anhbk@qq.com](http://mail.qq.com/cgi-bin/qm_share?t=qm_mailme&email=9peYnpSdtoeH2JWZmw)>
