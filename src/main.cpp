@@ -70,6 +70,52 @@ int exec_sys_cmd(const char* cmd, const char* arg="")
 	return system(s.c_str());
 }
 
+bool read_access_key(accesskey* key)
+{
+	std::string file;
+#ifdef _WIN32
+	char _path[260] = { 0 };
+	GetModuleFileName(NULL, _path, sizeof(_path));
+	strcpy(strrchr(_path, '\\') + 1, "alioss.key");
+	file = _path;
+#else
+	file = getenv("HOME");
+	file += "/alioss.key";
+#endif
+
+	std::ifstream ifs(file);
+	if (ifs){
+		char buf1[128],buf2[128];
+		ifs.getline(buf1, sizeof(buf1));
+		ifs.getline(buf2, sizeof(buf2));
+
+		std::regex re1(R"(^[a-zA-Z0-9]{16}$)");
+		std::regex re2(R"(^[a-zA-Z0-9]{30}$)");
+
+		if (!std::regex_match(buf1, re1) || !std::regex_match(buf2, re2))
+			throw std::string("Your alioss.key is invalid!");
+
+		key->set_key(buf1, buf2);
+		return true;
+	}
+	else{
+		std::string keyid, keysec;
+		std::cout << "Input access key ID: ";
+		std::getline(std::cin, keyid, '\n');
+		std::cout << "Input access key secret: ";
+		std::getline(std::cin, keysec, '\n');
+
+		std::regex re1(R"(^[a-zA-Z0-9]{16}$)");
+		std::regex re2(R"(^[a-zA-Z0-9]{30}$)");
+
+		if (!std::regex_match(keyid, re1) || !std::regex_match(keysec, re2))
+			throw std::string("Your alioss key/sec is invalid!");
+
+		key->set_key(keyid.c_str(), keysec.c_str());
+		return true;
+	}
+}
+
 int main()
 {
 	signal(SIGINT, [](int){});
@@ -96,15 +142,16 @@ int main()
 		return 1;
 	}
 
-// 	std::string keyid,keysec;
-// 	std::cout << "Input access key ID: ";
-// 	std::getline(std::cin, keyid, '\n');
-// 	std::cout << "Input access key secret: ";
-// 	std::getline(std::cin, keysec, '\n');
+
 
 	accesskey key;
-	//key.set_key(keyid.c_str(), keysec.c_str());
-	key.set_key("GADlpO6YWiTjXpYr", "42jHE4uOxhacZbiferMYn8nADQygd4");
+	try{
+		read_access_key(&key);
+	}
+	catch (std::string& e){
+		std::cerr << e << std::endl;
+		return -1;
+	}
 
 	socket::endpoint ep;
 	ep.set_ep(resolver[0].c_str(), 80);
