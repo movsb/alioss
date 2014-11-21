@@ -316,7 +316,7 @@ int main()
 
 								object::object object(key, bkt, ep);
 								try{
-									object.delete_object(arg.c_str());
+									object.delete_object((cur_dir+arg).c_str()+1);
 								}
 								catch (ossexcept& e){
 									ossexcept_stderr_dumper(e);
@@ -437,7 +437,7 @@ int main()
 
 								object::object object(key, bkt, ep);
 								try{
-									object.put_object(get_file_name(arg).c_str(), fis);
+									object.put_object((cur_dir+get_file_name(arg)).c_str()+1, fis);
 									std::cout << "Upload succeeded!\n";
 								}
 								catch (ossexcept& e){
