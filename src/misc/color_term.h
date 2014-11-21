@@ -39,7 +39,7 @@ namespace color_term{
 	public:
 		color(char fg, char bg, unsigned short def)
 			: _fg(fg), _bg(bg), _def(def){}
-		void operator()() const;
+		void operator()(std::ostream& os) const;
 	private:
 		char _fg,_bg;
 		unsigned short _def;
