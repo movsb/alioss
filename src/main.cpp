@@ -121,8 +121,9 @@ int main()
 		auto la_command_service = [&](){
 			std::cout << cterm(2, -1) << "Commands for: " << "Service" << cterm(-1, -1) << std::endl;
 			std::cout 
-				<< "    create...           create new bucket\n"
 				<< "    list                list buckets\n"
+				<< "    create...           create new bucket\n"
+				<< "    del <id>            delete bucket by id <id>\n"
 				<< "    enter <id>          enter some bucket\n"
 				<< "    quit                quit program\n"
 				<< "    help                display help text\n"
@@ -142,8 +143,9 @@ int main()
 			}
 
 			const char* service_cmds[] = {
-				"create",
 				"list",
+				"create",
+				"del",
 				"enter",
 				"quit",
 				"help",
@@ -186,6 +188,8 @@ int main()
 						std::string line;
 						std::cout << prompt;
 						std::getline(std::cin, line, '\n');
+						if (line.size() == 0) goto next_cmd;
+
 						std::stringstream liness(line);
 						if (liness >> id >> name){
 							if (id<1 || id>meta::oss_data_center_count){
@@ -220,6 +224,23 @@ int main()
 						bucket::bucket bucket(key, bkt, ep);
 						bucket.create_bucket();
 						std::cout << cterm(2, -1) << "Successfully created!" << cterm(-1, -1) << std::endl;
+					}
+					catch (ossexcept& e){
+						ossexcept_stderr_dumper(e);
+					}
+				}
+				else if(thecmd == "del"){
+					int id = 0;
+					if (arg.size() == 0 || (id = atoi(arg.c_str())) <= 0 || id > (int)svc.buckets().size()){
+						std::cout << "del - Invalid bucket ID!\n";
+						goto next_cmd;
+					}
+
+					try{
+						meta::bucket bkt(svc.buckets()[id - 1].name().c_str(), svc.buckets()[id-1].location().c_str(),"");
+						bucket::bucket bucket(key, bkt, ep);
+						bucket.delete_bucket();
+						std::cout << cterm(2, -1) << "Successfully deleted!" << cterm(-1, -1) << std::endl;
 					}
 					catch (ossexcept& e){
 						ossexcept_stderr_dumper(e);
