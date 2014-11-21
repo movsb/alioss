@@ -185,7 +185,9 @@ int main()
 							<< "    list            list objects in current directory\n"
 							<< "    cd [dir]        change directory (no slash('/'), no recursion)\n"
 							<< "    pwd             print working directory\n"
-							<< "    del <obj>       delete object in current directory, ignores non-exist object\n"
+							<< "    del <obj/dir>   delete object/folder in current directory\n"
+							   "                    ignores non-exist object\n"
+							<< "    mkdir <name>    create directory (need slash('/'))\n"
 							<< "    down <obj>      download object to working directory<obj>\n"
 							<< "    up <file>       upload files to current directory\n"
 							<< "    svc             back to service command\n"
@@ -198,6 +200,7 @@ int main()
 						"cd",
 						"pwd",
 						"del",
+						"mkdir",
 						"down",
 						"up",
 						"svc",
@@ -309,7 +312,7 @@ int main()
 								});
 							}
 							else if (thecmd == "del"){
-								if (arg.size() == 0 || arg.find('/') != std::string::npos){
+								if (arg.size() == 0 || (arg.find('/')!=std::string::npos && arg.find('/') != arg.size() - 1)){
 									std::cout << "Plz specify the object name you want to delete\n";
 									goto next_bucket_cmd;
 								}
@@ -317,6 +320,20 @@ int main()
 								object::object object(key, bkt, ep);
 								try{
 									object.delete_object((cur_dir+arg).c_str()+1);
+								}
+								catch (ossexcept& e){
+									ossexcept_stderr_dumper(e);
+								}
+							}
+							else if (thecmd == "mkdir"){
+								if (arg.size() == 0 || arg.find('/') != arg.size() - 1){
+									std::cout << "Plz correctly specify the folder name\n";
+									goto next_bucket_cmd;
+								}
+
+								try{
+									object::object object(key, bkt, ep);
+									object.create_folder(arg.c_str());
 								}
 								catch (ossexcept& e){
 									ossexcept_stderr_dumper(e);
