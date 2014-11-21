@@ -57,6 +57,16 @@ next_cmd:
 	return true;
 }
 
+int exec_sys_cmd(const char* cmd, const char* arg="")
+{
+	if (!cmd || !*cmd) return 0;
+
+	std::string s(cmd);
+	s += " ";
+	s += arg;
+	return system(s.c_str());
+}
+
 int main()
 {
 	signal(SIGINT, [](int){});
@@ -122,6 +132,11 @@ int main()
 
 			std::string cmd, arg;
 			read_command(&cmd, &arg, "service");
+
+			if (cmd[0] == '!'){
+				exec_sys_cmd(&cmd[1], arg.c_str());
+				continue;
+			}
 
 			const char* service_cmds[] = {
 				"list",
@@ -202,6 +217,11 @@ int main()
 					for (;;){
 						std::string cmd, arg;
 						read_command(&cmd, &arg, "bucket");
+
+						if (cmd[0] == '!'){
+							exec_sys_cmd(&cmd[1], arg.c_str());
+							continue;
+						}
 
 						std::vector<int> match;
 						if (find_cmd(bucket_cmds, cmd.c_str(), &match) || match.size() == 1){
