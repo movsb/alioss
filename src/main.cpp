@@ -107,7 +107,7 @@ int main()
 		std::cout << cterm(2,-1) << "Success!" << cterm(-1,-1) << std::endl;
 
 		auto la_command_service = [&](){
-			std::cout << cterm(2, -1) << "Commands for: " << "Service\n" << cterm(-1, -1);
+			std::cout << cterm(2, -1) << "Commands for: " << "Service" << cterm(-1, -1) << std::endl;
 			std::cout 
 				<< "    list                list buckets\n"
 				<< "    enter <id>          enter some bucket\n"
@@ -165,7 +165,7 @@ int main()
 					}
 
 					auto la_command_bucket = [&](){
-						std::cout << cterm(2, -1) << "Commands for: " << "Bucket\n" << cterm(-1, -1);
+						std::cout << cterm(2, -1) << "Commands for: " << "Bucket" << cterm(-1, -1) << std::endl;
 						std::cout
 							<< "    list            list objects in current directory\n"
 							<< "    cd [dir]        change directory (no slash('/'), no recursion)\n"
