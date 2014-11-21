@@ -6,11 +6,13 @@
 #include <sstream>
 #include <fstream>
 #include <functional>
+#include <regex>
 
 #include "osserror.h"
 #include "service.h"
 #include "bucket.h"
 #include "object.h"
+#include "ossmeta.h"
 #include "misc/color_term.h"
 #include "misc/strutil.h"
 #include "misc/stream.h"
@@ -101,7 +103,7 @@ int main()
 
 	accesskey key;
 	//key.set_key(keyid.c_str(), keysec.c_str());
-	key.set_key("GADlpO6YWiTjXpYr", "YF42jHE4uOxhacZbiferMYn8nADQygd4");
+	key.set_key("GADlpO6YWiTjXpYr", "42jHE4uOxhacZbiferMYn8nADQygd4");
 
 	socket::endpoint ep;
 	ep.set_ep(resolver[0].c_str(), 80);
@@ -119,6 +121,7 @@ int main()
 		auto la_command_service = [&](){
 			std::cout << cterm(2, -1) << "Commands for: " << "Service" << cterm(-1, -1) << std::endl;
 			std::cout 
+				<< "    create...           create new bucket\n"
 				<< "    list                list buckets\n"
 				<< "    enter <id>          enter some bucket\n"
 				<< "    quit                quit program\n"
@@ -139,6 +142,7 @@ int main()
 			}
 
 			const char* service_cmds[] = {
+				"create",
 				"list",
 				"enter",
 				"quit",
@@ -164,7 +168,64 @@ int main()
 			std::vector<int> match;
 			if (find_cmd(service_cmds, cmd.c_str(), &match) || match.size()==1){
 				std::string thecmd(service_cmds[match[match.size() - 1]]);
-				if (thecmd == "list"){
+				if (thecmd == "create"){
+					std::cout << cterm(2, -1);
+					printf("    %-4s%-16s%s","ID","Location","Location-Alias");
+					std::cout << cterm(-1, -1) << std::endl;
+
+					for (int i = 0; i<meta::oss_data_center_count; i++){
+						auto& dc = meta::oss_data_center[i];
+						printf("    %-4d%-16s%s\n", i + 1, dc.name, dc.location);
+					}
+					std::cout << std::endl;
+
+					int id;
+					std::string name;
+
+					for (const char* prompt = "Please input location-id & new bucket-name: ";;){
+						std::string line;
+						std::cout << prompt;
+						std::getline(std::cin, line, '\n');
+						std::stringstream liness(line);
+						if (liness >> id >> name){
+							if (id<1 || id>meta::oss_data_center_count){
+								std::cout << cterm(4, -1) << "invalid location id - " << id << ", "
+									<< "range: " << 1 << "-" << meta::oss_data_center_count
+									<< cterm(-1, -1) << std::endl;
+								prompt = "Try again: ";
+								continue;
+							}
+
+							std::regex re(R"(^[a-z0-9]{1}[a-z0-9\-]{1,61}[a-z0-9]{1}$)");
+							if (!std::regex_match(name, re)){
+								std::cout << cterm(4,-1)
+									<< "Sorry, invalid bucket name, constraint are:" << cterm(-1, -1) << std::endl;
+								std::cout
+									<< "    1. can only contains: a-z, 0-9, -\n"
+									<< "    2. must not start with or end with `-'\n"
+									<< "    3. the length must be in range of 3-63\n"
+									<< std::endl;
+								prompt = "Try again: ";
+								continue;
+							}
+							break;
+						}
+						else{
+							prompt = "invalid input, try again: ";
+						}
+					}
+
+					try{
+						meta::bucket bkt(meta::oss_data_center[id-1].name, meta::oss_data_center[id-1].location,"");
+						bucket::bucket bucket(key, bkt, ep);
+						bucket.create_bucket(name.c_str());
+						std::cout << cterm(2, -1) << "Successfully created!" << cterm(-1, -1) << std::endl;
+					}
+					catch (ossexcept& e){
+						ossexcept_stderr_dumper(e);
+					}
+				}
+				else if (thecmd == "list"){
 					svc.list_buckets();
 					svc.dump_buckets([&](int i, const meta::bucket& bkt){
 						std::cout << cterm(3, -1) << i << cterm(-1, -1) << ": " << bkt.name() << std::endl;

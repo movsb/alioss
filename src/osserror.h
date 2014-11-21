@@ -54,6 +54,7 @@ public:
 	static const ecode kUnhandled = ecode(-2);
 	static const ecode kInvalidArgs = ecode(-3);
 	static const ecode kInvalidCheckSum = ecode(-4);
+	static const ecode kTooMany = ecode(-5);
 	static const ecode kXmlError = ecode(1);
 
 	ossexcept(ecode errcode, const char* errmsg, const char* errfunc=nullptr, osserr* oe=nullptr)
