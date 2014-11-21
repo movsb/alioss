@@ -126,9 +126,9 @@ bool bucket::delete_bucket()
 	return true;
 }
 
-bool bucket::create_bucket(const char* name)
+bool bucket::create_bucket()
 {
-	if (!name || !*name || !std::regex_match(name, std::regex(R"(^[a-z0-9]{1}[a-z0-9\-]{1,61}[a-z0-9]{1}$)")))
+	if (!std::regex_match(_bkt.name(), std::regex(R"(^[a-z0-9]{1}[a-z0-9\-]{1,61}[a-z0-9]{1}$)")))
 		throw ossexcept(ossexcept::kInvalidArgs, "bucket name is invalid", __FUNCTION__);
 
 	connect();
@@ -144,7 +144,7 @@ bool bucket::create_bucket(const char* name)
 
 	// Host
 	std::string location = _bkt.location().size() ? _bkt.location() : "oss-cn-hangzhou";
-	head.add_host((std::string(name) + '.' + location + ".aliyuncs.com").c_str());
+	head.add_host((_bkt.name() + '.' + location + ".aliyuncs.com").c_str());
 
 	//Date
 	std::string date(gmt_time());
@@ -170,7 +170,7 @@ bool bucket::create_bucket(const char* name)
 		<< "\n" // no content-md5 requested
 		<< "text/xml\n"
 		<< date << "\n"
-		<< '/' << name << '/';
+		<< '/' << _bkt.name() << '/';
 
 	head.add_authorization(signature(_key, std::string(ss.str())).c_str());
 

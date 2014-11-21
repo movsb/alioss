@@ -216,9 +216,9 @@ int main()
 					}
 
 					try{
-						meta::bucket bkt(meta::oss_data_center[id-1].name, meta::oss_data_center[id-1].location,"");
+						meta::bucket bkt(name.c_str(), meta::oss_data_center[id-1].location,"");
 						bucket::bucket bucket(key, bkt, ep);
-						bucket.create_bucket(name.c_str());
+						bucket.create_bucket();
 						std::cout << cterm(2, -1) << "Successfully created!" << cterm(-1, -1) << std::endl;
 					}
 					catch (ossexcept& e){

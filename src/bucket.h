@@ -68,7 +68,7 @@ public:
 	bool delete_bucket();
 
 	// Create bucket from _bkt
-	bool create_bucket(const char* name);
+	bool create_bucket();
 
 	// List specified object(s)
 	// folder: "" or "folder_name/"
