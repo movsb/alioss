@@ -217,7 +217,7 @@ int main()
 
 			std::vector<int> match;
 			if (find_cmd(service_cmds, cmd.c_str(), &match) || match.size()==1){
-				std::string thecmd(service_cmds[match[match.size() - 1]]);
+				std::string thecmd(service_cmds[match.back()]);
 				if (thecmd == "create"){
 					std::cout << cterm(2, -1);
 					printf("    %-4s%-16s%s","ID","Location","Location-Alias");
@@ -314,7 +314,7 @@ int main()
 						std::cout
 							<< "    list            list objects in current directory\n"
 							<< "    cd [dir]        change directory (no slash('/'), no recursion)\n"
-							<< "    pwd             print working directory\n"
+							<< "    pwd             print working directory(oss', not syttem)\n"
 							<< "    del <obj/dir>   delete object/folder in current directory\n"
 							   "                    ignores non-exist object\n"
 							<< "    mkdir <name>    create directory (need slash('/'))\n"
@@ -422,7 +422,7 @@ int main()
 								goto next_cmd;
 							}
 							else if (thecmd == "list"){
-								bucket.list_objects(cur_dir.c_str()+1);
+								bucket.list_objects(cur_dir.c_str());
 
 								std::cout << cterm(7, 2) << "Folders:\n" << cterm(-1, -1);
 								bucket.dump_folders([&](int i, const std::string& folder)->bool{
@@ -449,7 +449,7 @@ int main()
 
 								object::object object(key, bkt, ep);
 								try{
-									object.delete_object((cur_dir+arg).c_str()+1);
+									object.delete_object((cur_dir+arg).c_str());
 								}
 								catch (ossexcept& e){
 									ossexcept_stderr_dumper(e);
@@ -511,7 +511,7 @@ int main()
 
 								object::object object(key, bkt, ep);
 								try{
-									object.get_object((cur_dir+arg).c_str()+1, fos);
+									object.get_object((cur_dir+arg).c_str(), fos);
 									std::cout << "Download completed\n";
 								}
 								catch (ossexcept& e){
@@ -584,7 +584,7 @@ int main()
 
 								object::object object(key, bkt, ep);
 								try{
-									object.put_object((cur_dir+get_file_name(arg)).c_str()+1, fis);
+									object.put_object((cur_dir+get_file_name(arg)).c_str(), fis);
 									std::cout << "Upload succeeded!\n";
 								}
 								catch (ossexcept& e){

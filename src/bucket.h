@@ -71,7 +71,7 @@ public:
 	bool create_bucket();
 
 	// List specified object(s)
-	// folder: "" or "folder_name/"
+	// folder: must be "" or "/folder_name/folder2/"
 	bool list_objects(const char* folder="", bool recursive=false);
 
 	/// dump objects & dump directories

@@ -48,6 +48,7 @@ namespace object{
 
 	bool object::delete_object(const char* obj)
 	{
+		//TODO: regex obj
 		if (!obj || !*obj)
 			throw ossexcept(ossexcept::kConflict, "Object must have a valid name.", __FUNCTION__);
 
@@ -62,7 +63,7 @@ namespace object{
 		// Verb
 		ss.clear(); ss.str("");
 		// TODO: url-encoding
-		ss << "DELETE /" << obj << " HTTP/1.1";
+		ss << "DELETE " << obj << " HTTP/1.1";
 		head.set_verb(std::string(ss.str()).c_str());
 
 		// Host
@@ -79,7 +80,7 @@ namespace object{
 		ss << "DELETE\n";
 		ss << "\n\n";
 		ss << date << "\n";
-		ss << "/" << _bkt.name() << "/" << obj; // TODO: url-encoding
+		ss << "/" << _bkt.name() << obj; // TODO: url-encoding
 		head.add_authorization(signature(_key, std::string(ss.str())).c_str());
 
 		// Connection
@@ -154,7 +155,7 @@ namespace object{
 		// Verb
 		ss.clear(); ss.str("");
 		// TODO: url-encoding
-		ss << "GET /" << obj << " HTTP/1.1";
+		ss << "GET " << obj << " HTTP/1.1";
 		head.set_verb(std::string(ss.str()).c_str());
 
 		// Host
@@ -171,7 +172,7 @@ namespace object{
 		ss << "GET\n";
 		ss << "\n\n";
 		ss << date << "\n";
-		ss << "/" << _bkt.name() << "/" << obj; // TODO: url-encoding
+		ss << "/" << _bkt.name() << obj; // TODO: url-encoding
 		head.add_authorization(signature(_key, std::string(ss.str())).c_str());
 
 		// Range & Unmodified-Since
@@ -239,7 +240,7 @@ namespace object{
 		// Verb
 		ss.clear(); ss.str("");
 		// TODO: url-encoding
-		ss << "PUT /" << obj << " HTTP/1.1";
+		ss << "PUT " << obj << " HTTP/1.1";
 		head.set_verb(std::string(ss.str()).c_str());
 
 		// Content-Length & Content-Type && Content-Disposition && Content-Encoding
@@ -266,7 +267,7 @@ namespace object{
 		ss << "\n";
 		ss << content_type << "\n";
 		ss << date << "\n";
-		ss << "/" << _bkt.name() << "/" << obj; // TODO: url-encoding
+		ss << "/" << _bkt.name() << obj; // TODO: url-encoding
 		head.add_authorization(signature(_key, std::string(ss.str())).c_str());
 
 		// Connection

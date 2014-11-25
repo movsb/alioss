@@ -229,6 +229,8 @@ bool bucket::create_bucket()
 
 bool bucket::list_objects(const char* folder, bool recursive)
 {
+	//TODO: regex folder
+
 	connect();
 
 	std::stringstream ss;
@@ -242,7 +244,7 @@ bool bucket::list_objects(const char* folder, bool recursive)
 	//---------------------------- Requesting----------------------------------
 	// Verb
 	ss.clear(); ss.str("");
-	ss << "GET /?prefix=" << folder
+	ss << "GET /?prefix=" << (folder && *folder=='/' ? folder+1 : "")
 		<< "&delimiter=" << (recursive ? "" : "/")
 		<< " HTTP/1.1";
 	head.set_verb(std::string(ss.str()).c_str());

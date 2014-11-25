@@ -55,10 +55,10 @@ public:
 	bool disconnect();
 
 	/*--------------------------------------------------------------------
-	@desc Get(download) an object from specified `range', and writes it to `os'
-	@param obj: the name of the object that you want to get.
+	@desc Get(download) an object named `obj' from specified `range', and writes it to `os'
+	@param obj: the name and the path of the object that you want to get.
 		Must be url-encoded, and be UTF-8-ed.
-		No prefix '/'
+		e.g.: /path/to/file.txt
 	@param os: the ostream which get_object() writes data to.
 	@param range: returns data from this range: [<start>-<end>], or leave it empty 
 	@param unmodified_since: if `range', `'unmodified_since' checks whether the object
