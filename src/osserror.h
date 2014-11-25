@@ -46,9 +46,11 @@ public:
 	enum class ecode{};
 
 	static const ecode kNoError = ecode(0);
+	static const ecode kNotModified = ecode(304);
 	static const ecode kBadRequest = ecode(400);
 	static const ecode kNotFound = ecode(404);
 	static const ecode kConflict = ecode(409);
+	static const ecode kPreconditionFailed = ecode(412);
 	static const ecode kForbidden = ecode(403);
 	static const ecode kNotSpecified = ecode(-1);
 	static const ecode kUnhandled = ecode(-2);

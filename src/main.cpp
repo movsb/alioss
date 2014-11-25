@@ -318,6 +318,7 @@ int main()
 							<< "    del <obj/dir>   delete object/folder in current directory\n"
 							   "                    ignores non-exist object\n"
 							<< "    mkdir <name>    create directory (need slash('/'))\n"
+							<< "    head <obj>      show object meta info\n"
 							<< "    down <obj>      download object to working directory<obj>\n"
 							<< "    up <file>       upload files to current directory\n"
 							<< "    svc             back to service command\n"
@@ -331,6 +332,7 @@ int main()
 						"pwd",
 						"del",
 						"mkdir",
+						"head",
 						"down",
 						"up",
 						"svc",
@@ -463,7 +465,24 @@ int main()
 
 								try{
 									object::object object(key, bkt, ep);
-									object.create_folder(arg.c_str());
+									object.create_folder((cur_dir+arg).c_str());
+								}
+								catch (ossexcept& e){
+									ossexcept_stderr_dumper(e);
+								}
+							}
+							else if (thecmd == "head"){
+								if (arg.size() == 0 || (arg.find('/') != std::string::npos && arg.find('/') != arg.size() - 1)){
+									std::cout << "Plz specify the object name you want to head to\n";
+									goto next_bucket_cmd;
+								}
+
+								try{
+									object::object object(key, bkt, ep);
+									object.head_object((cur_dir+arg).c_str()).dump([&](size_t i, const std::string& k, const std::string& v){
+										printf("%-20s: %s\n", k.c_str(), v.c_str());
+										return true;
+									});
 								}
 								catch (ossexcept& e){
 									ossexcept_stderr_dumper(e);

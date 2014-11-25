@@ -143,7 +143,7 @@ namespace socket {
 	void socketerror_stderr_dumper(socketexcept& e)
 	{
 		color_term::color_term cterm;
-		std::cerr << cterm(12, -1) << "---> socketexcept:\n" << cterm(-1, -1);
+		std::cerr << "\n" << cterm(12, -1) << "---> socketexcept:\n" << cterm(-1, -1);
 		std::cerr << "    code: " << e.code() << std::endl;
 		std::cerr << "    what: " << e.what() << std::endl;
 
@@ -295,6 +295,18 @@ bool http::get_body(stream::ostream& os)
 	}
 
 	return true;
+}
+
+
+void header::head::dump(std::function<bool(
+	std::vector<item>::size_type i,
+	decltype(static_cast<item*>(0)->get_key())& k, 
+	decltype(static_cast<item*>(0)->get_val())& v) > dumper) const
+{
+	std::vector<item>::size_type i = 0;
+	for (auto& e : _items){
+		dumper(++i, e.get_key(), e.get_val());
+	}
 }
 
 } // namespace http

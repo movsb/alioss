@@ -82,6 +82,14 @@ public:
 
 	bool create_folder(const char* name);
 
+	const http::header::head& head_object(
+		const char* obj,
+		const char* if_modified_since = nullptr,
+		const char* if_unmodified_since = nullptr,
+		const char* if_match = nullptr,
+		const char* if_none_match = nullptr
+		);
+
 protected:
 	bool is_object_name_valid(const char* obj);
 

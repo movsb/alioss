@@ -329,10 +329,78 @@ namespace object{
 		return true;
 	}
 
+	const http::header::head& object::head_object(
+		const char* obj,
+		const char* if_modified_since /*= nullptr*/,
+		const char* if_unmodified_since /*= nullptr*/,
+		const char* if_match /*= nullptr*/,
+		const char* if_none_match /*= nullptr */)
+	{
+		std::stringstream ss;
 
+		auto& head = _http.head();
+		head.clear();
 
+		// Verb
+		ss.clear(); ss.str("");
+		// TODO: url-encoding
+		ss << "HEAD " << obj << " HTTP/1.1";
+		head.set_verb(std::string(ss.str()));
 
+		// Host
+		ss.clear(); ss.str("");
+		ss << _bkt.name() << '.' << _bkt.location() << ".aliyuncs.com";
+		head.add_host(std::string(ss.str()));
 
+		//Date
+		std::string date(gmt_time());
+		head.add_date(date);
 
+		// Authorization
+		ss.clear(); ss.str("");
+		ss << "HEAD\n";
+		ss << "\n\n";
+		ss << date << "\n";
+		ss << "/" << _bkt.name() << obj; // TODO: url-encoding
+		head.add_authorization(signature(_key, std::string(ss.str())));
+
+		// Connection
+		head.add_connection("close");
+
+		// Queries.
+		struct{ const char* h; http::header::FIELD f; } a[] = {
+				{ if_modified_since, http::header::kIfModifiedSince },
+				{ if_unmodified_since, http::header::kIfUnmodifiedSince },
+				{ if_match, http::header::kIfMatch },
+				{ if_none_match, http::header::kIfNoneMatch },
+		};
+		for (auto& oa : a){
+			if (oa.h && *oa.h)
+				head.add(oa.f, oa.h);
+		}
+
+		try{
+			connect();
+			_http.put_head();
+			_http.get_head();
+			disconnect();
+		}
+		catch (socket::socketexcept& e){
+			e.push_stack(__FUNCTION__);
+			throw;
+		}
+
+		if (head.get_status() == "200")
+			return _http.head();
+		else if (head.get_status() == "304")
+			throw ossexcept(ossexcept::kNotModified, head.get_status_n_comment().c_str(), __FUNCTION__);
+		else if (head.get_status() == "404")
+			throw ossexcept(ossexcept::kNotFound, head.get_status_n_comment().c_str(), __FUNCTION__);
+		else if (head.get_status() == "412")
+			throw ossexcept(ossexcept::kPreconditionFailed, head.get_status_n_comment().c_str(), __FUNCTION__);
+		else
+			throw ossexcept(ossexcept::kUnhandled, head.get_status_n_comment().c_str(), __FUNCTION__);
+	}
+		
 } // namespace object
 } // namespace alioss

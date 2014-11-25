@@ -206,11 +206,16 @@ namespace header {
 	typedef const char* const FIELD;
 	static FIELD kContentLength = "Content-Length";
 	static FIELD kContentType = "Content-Type";
+	static FIELD kIfModifiedSince = "If-Modified-Since";
+	static FIELD kIfUnmodifiedSince = "If-Unmodified-Since";
+	static FIELD kIfMatch = "If-Match";
+	static FIELD kIfNoneMatch = "If-None-Match";
 
 class item
 {
 public: // ctors & dtors
-	item(const char* key, const char* val, bool space=true)
+	template<class Tk, class Tv>
+	item(const Tk& key, const Tv& val, bool space=true)
 		: _key(key)
 		, _val(val)
 		, _space(space)
@@ -225,17 +230,18 @@ public:
 		return _val;
 	}
 
-	void set_key(const char* key) {
-		_key = key;
+	template<class T>
+	void set_key(const T& t){
+		_key = t;
 	}
 
-	void set_val(const char* val) {
-		_val = val;
+	template<class T>
+	void set_val(const T& t){
+		_val = t;
 	}
 
-	bool set_keyval(const char* keyval);
-
-	bool set_keyval(const char* key, const char* val){
+	template<class Tk, class Tv>
+	bool set_keyval(const Tk& key, const Tv& val){
 		set_key(key);
 		set_val(val);
 		return true;
@@ -269,12 +275,13 @@ public:
 		return _items[i];
 	}
 
-	bool set_verb(const char* verb){
+	template<class T>
+	bool set_verb(const T& verb){
 		_verb = verb;
 		return true;
 	}
 
-	std::string get_verb() const {
+	const std::string& get_verb() const {
 		return _verb;
 	}
 
@@ -324,65 +331,78 @@ public:
 			pos1++;
 		std::string v(pos1);
 
-		return add(k.c_str(), v.c_str(), space);
+		return add(k, v, space);
 	}
 
-	bool add(const char* key, const char* val, bool space=true){
+	template<class Tk, class Tv>
+	bool add(const Tk& key, const Tv& val, bool space=true){
 		_items.push_back(item(key, val, space));
 		return true;
 	}
 
-	bool add_host(const char* val){
+	template<class T>
+	bool add_host(const T& val){
 		return add("Host", val);
 	}
 
-	bool add_user_agent(const char* val){
+	template<class T>
+	bool add_user_agent(const T& val){
 		return add("User-Agent", val);
 	}
 
-	bool add_accept(const char* val){
+	template<class T>
+	bool add_accept(const T& val){
 		return add("Accept", val);
 	}
 
-	bool add_accept_language(const char* val){
+	template<class T>
+	bool add_accept_language(const T& val){
 		return add("Accept-Language", val);
 	}
 	
-	bool add_accept_encoding(const char* val){
+	template<class T>
+	bool add_accept_encoding(const T& val){
 		return add("Accept-Encoding", val);
 	}
 
-	bool add_connection(const char* val){
+	template<class T>
+	bool add_connection(const T& val){
 		return add("Connection", val);
 	}
 
-	bool add_date(const char* val){
+	template<class T>
+	bool add_date(const T& val){
 		return add("Date", val);
 	}
 	
-	bool add_authorization(const char* val){
+	template<class T>
+	bool add_authorization(const T& val){
 		return add("Authorization", val);
 	}
 
 	bool add_content_length(size_t len){
 		char buf[32];
 		sprintf(buf, "%u", len);
-		return add("Content-Length", buf);
+		return add("Content-Length",buf, true);
 	}
 
-	bool add_content_type(const char* type){
+	template<class T>
+	bool add_content_type(const T& type){
 		return add("Content-Type", type);
 	}
 
-	bool add_content_disposition(const char* val){
+	template<class T>
+	bool add_content_disposition(const T& val){
 		return add("Content-Disposition", val);
 	}
 
-	bool add_content_encoding(const char* val){
+	template<class T>
+	bool add_content_encoding(const T& val){
 		return add("Content-Encoding", val);
 	}
 
-	bool remove(const char* key){
+	template<class T>
+	bool remove(const T& key){
 		for(auto it=_items.begin(); it!=_items.end();){
 			if(it->get_key() == key){
 				it = _items.erase(it);
@@ -395,7 +415,8 @@ public:
 		return true;
 	}
 
-	bool get(const char* key, std::string* pval){
+	template<class T>
+	bool get(const T& key, std::string* pval){
 		for(auto& item : _items){
 			if(item.get_key() == key){
 				*pval = item.get_val();
@@ -403,7 +424,12 @@ public:
 			}
 		}
 		return false;
-	}			
+	}
+
+	void dump(std::function < bool( // return false to stop enumeration
+		std::vector<item>::size_type i,  // start from 1
+		decltype(static_cast<item*>(0)->get_key())& k,
+		decltype(static_cast<item*>(0)->get_val())& v) > dumper) const;
 
 protected:
 	std::string _verb;
