@@ -22,13 +22,10 @@ class service {
 public:
 	service(const accesskey& key, const socket::endpoint& ep)
 		: _key(key)
+		, _endpoint(ep)
 	{
-		_endpoint.set_ep(ep.ip().c_str(), ep.port());
 	}
 	
-	bool connect();
-	bool disconnect();
-
 	// Verify user key
 	// Returns:
 	//	1. InvalidAccessKeyID - ID not exists
@@ -47,20 +44,20 @@ private:
 		return _buckets[_buckets.size() - 1];
 	}
 
-protected:
-	std::string		_prefix;
-	std::string		_marker;
-	std::string		_max_keys;
-	bool			_is_truncated;
-	std::string		_next_marker;
+// protected:
+// 	std::string		_prefix;
+// 	std::string		_marker;
+// 	std::string		_max_keys;
+// 	bool			_is_truncated;
+// 	std::string		_next_marker;
 
 protected:
 	meta::owner _owner;
 	std::vector<meta::bucket> _buckets;
 
 protected:
-	accesskey	_key;
-	socket::endpoint _endpoint;
+	const accesskey&	_key;
+	const socket::endpoint& _endpoint;
 	http::http	_http;
 };
 
