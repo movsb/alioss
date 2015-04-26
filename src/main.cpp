@@ -80,40 +80,32 @@ bool read_access_key(accesskey* key)
 	file = _path;
 #else
 	file = getenv("HOME");
-	file += "/alioss.key";
+	file += "/.alioss.key";
 #endif
 
 	std::ifstream ifs(file);
+	std::string keyid, keysec;
 	if (ifs){
 		char buf1[128],buf2[128];
 		ifs.getline(buf1, sizeof(buf1));
 		ifs.getline(buf2, sizeof(buf2));
 
-		std::regex re1(R"(^[a-zA-Z0-9]{16}$)", std::regex_constants::egrep);
-		std::regex re2(R"(^[a-zA-Z0-9]{30}$)", std::regex_constants::egrep);
-
-		if (!std::regex_match(buf1, re1) || !std::regex_match(buf2, re2))
-			throw std::string("Your alioss.key is invalid!");
-
-		key->set_key(buf1, buf2);
-		return true;
+		keyid = buf1;
+		keysec = buf2;
 	}
 	else{
-		std::string keyid, keysec;
 		std::cout << "Input access key ID: ";
 		std::getline(std::cin, keyid, '\n');
 		std::cout << "Input access key secret: ";
 		std::getline(std::cin, keysec, '\n');
-
-		std::regex re1(R"(^[a-zA-Z0-9]{16}$)", std::regex_constants::egrep);
-		std::regex re2(R"(^[a-zA-Z0-9]{30}$)", std::regex_constants::egrep);
-
-		if (!std::regex_match(keyid, re1) || !std::regex_match(keysec, re2))
-			throw std::string("Your alioss key/sec is invalid!");
-
-		key->set_key(keyid.c_str(), keysec.c_str());
-		return true;
 	}
+
+	if(keyid.size() != 16 || keysec.size() != 30) {
+		throw std::string("Your alioss key/sec/ is invalid!");
+	}
+
+	key->set_key(keyid.c_str(), keysec.c_str());
+	return true;
 }
 
 int main()
@@ -314,7 +306,7 @@ int main()
 						std::cout
 							<< "    list            list objects in current directory\n"
 							<< "    cd [dir]        change directory (no slash('/'), no recursion)\n"
-							<< "    pwd             print working directory(oss', not syttem)\n"
+							<< "    pwd             print working directory(oss', not system)\n"
 							<< "    del <obj/dir>   delete object/folder in current directory\n"
 							   "                    ignores non-exist object\n"
 							<< "    mkdir <name>    create directory (need slash('/'))\n"
@@ -424,13 +416,13 @@ int main()
 							else if (thecmd == "list"){
 								bucket.list_objects(cur_dir.c_str());
 
-								std::cout << cterm(7, 2) << "Folders:\n" << cterm(-1, -1);
+								std::cout << cterm(7, 2) << "Folders:" << cterm(-1, -1) << std::endl;
 								bucket.dump_folders([&](int i, const std::string& folder)->bool{
 									std::cout << "    " << folder.c_str()+cur_dir.size()-1 << std::endl;
 									return true;
 								});
 
-								std::cout << cterm(7, 2) << "Files:\n" << cterm(-1, -1);
+								std::cout << cterm(7, 2) << "Files:" << cterm(-1, -1) << std::endl;
 								bucket.dump_objects([&](int i, const meta::content& obj)->bool{
 									if (obj.key().back() == '/'){
 										// ignore current directory

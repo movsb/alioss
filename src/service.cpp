@@ -119,7 +119,7 @@ bool service::verify_user()
 	// Verb
 	ss.clear(); ss.str("");
 	// TODO: max-keys seems not working?
-	ss << "GET /?max-keys=0 HTTP/1.1"; // max-keys set, different from list_buckets()
+	ss << "GET /?max-keys=1 HTTP/1.1"; // max-keys set, different from list_buckets()
 	head.set_verb(std::string(ss.str()).c_str());
 
 	// Host
