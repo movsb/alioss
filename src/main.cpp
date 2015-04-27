@@ -455,7 +455,7 @@ int main()
 
 								try{
 									object::object object(key, bkt, ep);
-									object.create_folder(arg.c_str());
+									object.create_folder((cur_dir+arg).c_str());
 								}
 								catch (ossexcept& e){
 									ossexcept_stderr_dumper(e);
