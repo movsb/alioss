@@ -140,5 +140,8 @@
     <ClInclude Include="..\..\src\misc\strutil.h">
       <Filter>Source Files\misc</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\misc\os.hpp">
+      <Filter>Source Files\misc</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

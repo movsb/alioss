@@ -47,6 +47,36 @@ namespace alioss{
 			}
 		}
 
+        const char* remove_relative_path_prefix(const char* path) {
+            while((true)) {
+                if(path[0] == '.') {
+                    if(path[1] == '/' || path[1] == '\\') {
+                        path += 2;
+                        continue;
+                    }
+                    else if(path[1] == '.') {
+                        if(path[2] == '/' || path[2] == '\\') {
+                            path += 3;
+                            continue;
+                        }
+                    }
+                }
+                break;
+            }
+            return path;
+        }
+
+        const char* normalize_slash(char* path) {
+            auto s = path;
+            while(*path) {
+                if(*path == '\\')
+                    *path = '/';
+
+                ++path;
+            }
+            return s;
+        }
+
 	}
 }
 

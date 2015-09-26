@@ -17,6 +17,7 @@
 #include "misc/color_term.h"
 #include "misc/strutil.h"
 #include "misc/stream.h"
+#include "misc/os.hpp"
 
 using namespace alioss;
 
@@ -312,7 +313,8 @@ int main()
 							<< "    mkdir <name>    create directory (need slash('/'))\n"
 							<< "    head <obj>      show object meta info\n"
 							<< "    down <obj>      download object to working directory<obj>\n"
-							<< "    up <file>       upload files to current directory\n"
+							<< "    up <file>       upload files to current directory,
+                               "                    with a `/' suffix means to upload entire folder\n"
 							<< "    svc             back to service command\n"
 							<< "    quit            quit program\n"
 							<< "    help            show this help message\n"
@@ -535,6 +537,8 @@ int main()
 									goto next_bucket_cmd;
 								}
 
+                                bool is_folder = arg.back() == '/' || arg.back() == '\\';
+
 								class file_istream : public stream::istream{
 								public:
 									virtual int size() const override{
@@ -569,38 +573,42 @@ int main()
 									std::ifstream _filestm;
 								};
 
-								file_istream fis;
-								if (!fis.open(arg.c_str())){
-									std::cout << "Cannot open file `" << arg << "' for reading!\n";
-									goto next_bucket_cmd;
-								}
+                                std::vector<std::string> files;
+                                if(is_folder == false) {
+                                    files.push_back(arg.c_str());
+                                }
+                                else {
+                                    files.clear();
+                                    os::ls_files(arg.c_str(), &files);
+                                    if(files.size() == 0) {
+                                        std::cerr << "Your search doesn't match anything.\n";
+                                        goto next_bucket_cmd;
+                                    }
 
-								auto get_file_name = [](const std::string& arg)->std::string{
-									auto slash = arg.rfind('/');
-									auto backslash = arg.rfind('\\');
+                                    std::cout << "    " << files.size() << " file(s) will be uploaded.\n";
+                                }
 
-									auto real_slash = slash;
-									if (slash != std::string::npos && backslash != std::string::npos){
-										real_slash = slash > backslash ? slash : backslash;
-									}
-									else if (slash != std::string::npos){
-										real_slash = slash;
-									}
-									else{
-										real_slash = backslash;
-									}
+                                int uploaded = 0;
+                                for(auto& file : files) {
+                                    auto& arg = file;
+                                    file_istream fis;
+                                    if(!fis.open(arg.c_str())) {
+                                        std::cout << "Cannot open file `" << arg << "' for reading!\n";
+                                        continue;
+                                    }
 
-									return arg.substr(real_slash+1);
-								};
-
-								object::object object(key, bkt, ep);
-								try{
-									object.put_object((cur_dir+get_file_name(arg)).c_str(), fis);
-									std::cout << "Upload succeeded!\n";
-								}
-								catch (ossexcept& e){
-									ossexcept_stderr_dumper(e);
-								}
+                                    object::object object(key, bkt, ep);
+                                    try {
+                                        std::cout << "Uploading `" << arg << "' ... ";
+                                        object.put_object((cur_dir + strutil::remove_relative_path_prefix(arg.c_str())).c_str(), fis);
+                                        uploaded++;
+                                        std::cout << "succeeded!\n";
+                                    } catch(ossexcept& e) {
+                                        ossexcept_stderr_dumper(e);
+                                    }
+                                }
+                                std::cout << "\n    " << files.size() << " file(s) to upload, "
+                                    << uploaded << " file(s) successfully uploaded.\n";
 							}
 						}
 						else{

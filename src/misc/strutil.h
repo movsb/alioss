@@ -17,6 +17,8 @@ namespace alioss{
 
 		std::string strip(const std::string& s);
 		std::string strip(const char* s, int len=-1);
+        const char* normalize_slash(char* path);
+        const char* remove_relative_path_prefix(const char* path);
 
         inline void clear(std::stringstream& ss) {
             ss.clear();

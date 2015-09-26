@@ -40,6 +40,7 @@
     <ClInclude Include="..\..\src\crypto\md5.h" />
     <ClInclude Include="..\..\src\crypto\sha1.h" />
     <ClInclude Include="..\..\src\misc\color_term.h" />
+    <ClInclude Include="..\..\src\misc\os.hpp" />
     <ClInclude Include="..\..\src\misc\strutil.h" />
     <ClInclude Include="..\..\src\misc\time.h" />
     <ClInclude Include="..\..\src\object.h" />
