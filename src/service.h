@@ -25,6 +25,9 @@ public:
 		, _endpoint(ep)
 	{
 	}
+
+    bool connect();
+    bool disconnect();
 	
 	// Verify user key
 	// Returns:

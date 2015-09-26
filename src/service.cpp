@@ -16,6 +16,14 @@ namespace alioss{
 
 namespace service{
 
+bool service::connect() {
+    return _http.connect(_endpoint.ip().c_str(), _endpoint.port());
+}
+
+bool service::disconnect() {
+    return _http.disconnect();
+}
+
 bool service::list_buckets()
 {
 	using namespace strutil;
@@ -45,7 +53,7 @@ bool service::list_buckets()
 	// Connection
 	head.add_connection("close");
 
-	_http.connect(_endpoint);
+    connect();
 	_http.put_head();
 
 	_http.get_head();
@@ -53,7 +61,7 @@ bool service::list_buckets()
 	http::str_body_ostream bs;
 	_http.get_body(bs);
 
-	_http.disconnect();
+    disconnect();
 
 	_buckets.clear();
 

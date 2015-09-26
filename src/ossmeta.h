@@ -7,12 +7,15 @@ namespace alioss {
 
 namespace meta {
 
+    const char* const oss_root_server = "oss.ayuncs.com";
+    const char* const oss_server_suffix = ".aliyuncs.com";
+
 	struct oss_data_center_s{
 		const char* name;
 		const char* location;
 	};
 
-	const int oss_data_center_count = 5;
+	const int oss_data_center_count = 8;
 	extern oss_data_center_s oss_data_center[];
 
 class owner {

@@ -52,8 +52,6 @@ namespace object{
 		if (!obj || !*obj)
 			throw ossexcept(ossexcept::kConflict, "Object must have a valid name.", __FUNCTION__);
 
-		connect();
-
 		std::stringstream ss;
 
 		auto& head = _http.head();
@@ -85,6 +83,8 @@ namespace object{
 
 		// Connection
 		head.add_connection("close");
+
+        connect();
 
 		_http.put_head();
 
@@ -145,8 +145,6 @@ namespace object{
 		}
 
 		//---------------------------- Requesting----------------------------------
-		connect();
-
 		std::stringstream ss;
 
 		auto& head = _http.head();
@@ -187,12 +185,15 @@ namespace object{
 		// Connection
 		head.add_connection("close");
 
+        connect();
+
 		_http.put_head();
 
 		//-------------------------------------Response--------------------------------
 		_http.get_head();
 		
 		auto& status = head.get_status();
+
 		if (status == "200"){
 			_http.get_body(os);
 			disconnect();
@@ -230,8 +231,6 @@ namespace object{
 		if (!obj || !* obj || !is_object_name_valid(obj)) throw ossexcept(ossexcept::kInvalidArgs, "Invalid argument: obj", __FUNCTION__);
 
 		//---------------------------- Requesting----------------------------------
-		connect();
-
 		std::stringstream ss;
 
 		auto& head = _http.head();
@@ -272,6 +271,8 @@ namespace object{
 
 		// Connection
 		head.add_connection("close");
+
+        connect();
 
 		_http.put_head();
 

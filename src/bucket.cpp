@@ -40,7 +40,11 @@ namespace bucket_error{
 	{
 		auto node = reinterpret_cast<tinyxml2::XMLElement*>(n);
 		if (strcmp(node->Value(), "BucketName") == 0){
-			_bucket_name = node->FirstChild()->ToText()->Value();
+            auto first = node->FirstChild();
+            if(first && first->ToText())
+                _bucket_name = first->ToText()->Value();
+            else
+                _bucket_name = "";
 		}
 	}
 
@@ -66,8 +70,6 @@ bool bucket::disconnect()
 
 bool bucket::delete_bucket()
 {
-	connect();
-
 	std::stringstream ss;
 
 	auto& head = _http.head();
@@ -96,6 +98,8 @@ bool bucket::delete_bucket()
 
 	// Connection
 	head.add_connection("close");
+
+	connect();
 
 	_http.put_head();
 
@@ -130,8 +134,6 @@ bool bucket::create_bucket()
 {
 	if (!std::regex_match(_bkt.name(), std::regex(R"(^[a-z0-9]{1}[a-z0-9\-]{1,61}[a-z0-9]{1}$)", std::regex_constants::egrep)))
 		throw ossexcept(ossexcept::kInvalidArgs, "bucket name is invalid", __FUNCTION__);
-
-	connect();
 
 	std::stringstream ss;
 
@@ -176,6 +178,8 @@ bool bucket::create_bucket()
 
 	// Connection
 	head.add_connection("close");
+
+	connect();
 
 	_http.put_head();
 	_http.put_body(body.c_str(), body.size());
@@ -231,8 +235,6 @@ bool bucket::list_objects(const char* folder, bool recursive)
 {
 	//TODO: regex folder
 
-	connect();
-
 	std::stringstream ss;
 
 	auto& head = _http.head();
@@ -268,6 +270,8 @@ bool bucket::list_objects(const char* folder, bool recursive)
 
 	// Connection
 	head.add_connection("close");
+
+	connect();
 
 	_http.put_head();
 

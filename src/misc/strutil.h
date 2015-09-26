@@ -10,6 +10,7 @@ Desc	: String manipulation
 
 #include <string>
 #include <vector>
+#include <sstream>
 
 namespace alioss{
 	namespace strutil{
@@ -17,6 +18,10 @@ namespace alioss{
 		std::string strip(const std::string& s);
 		std::string strip(const char* s, int len=-1);
 
+        inline void clear(std::stringstream& ss) {
+            ss.clear();
+            ss.str("");
+        }
 	}
 }
 

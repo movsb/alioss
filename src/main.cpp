@@ -125,7 +125,7 @@ int main()
 		resolver.resolve("oss.aliyuncs.com", "http");
 
 		std::cout << std::endl;
-		for (int i = 0; i < resolver.size(); i++){
+		for (int i = 0; i < (int)resolver.size(); i++){
 			std::cout << "  " << resolver[i] << std::endl;
 		}
 	}
@@ -386,7 +386,7 @@ int main()
 								auto find_dirs = [](const std::vector<std::string>& vs, const std::string& name, std::vector<int>* match)->bool{
 									bool found = false;
 									match->clear();
-									for (int i = 0; (int)i<vs.size(); i++){
+									for (int i = 0; i<(int)vs.size(); i++){
 										if (vs[i].find(name) == 0){
 											match->push_back(i);
 											if (vs[i].size() == name.size()+1){
