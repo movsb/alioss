@@ -227,15 +227,10 @@ bool http::get_line(std::string* line, bool crlf){
 	return success;
 }
 
-bool http::put_body(const void* data, size_t sz)
-{
-	return put_body(data, sz, [](const unsigned char*,int){});
-}
-
-bool http::put_body(const void* data, size_t sz, std::function<void(const unsigned char* data, int sz)> hash)
+bool http::put_body(const void* data, size_t sz, std::function<void(const unsigned char* data, int sz)> cb)
 {
 	try{
-		hash((unsigned char*)data, sz);
+		if(cb) cb((unsigned char*)data, sz);
 		send(data, sz);
 	}
 	catch (alioss::socket::socketexcept& e){
@@ -246,19 +241,14 @@ bool http::put_body(const void* data, size_t sz, std::function<void(const unsign
 	return true;
 }
 
-bool http::put_body(stream::istream& is)
-{
-	return put_body(is, [](const unsigned char* data, int sz){});
-}
-
-bool http::put_body(stream::istream& is, std::function<void(const unsigned char* data, int sz)> hash)
+bool http::put_body(stream::istream& is, std::function<void(const unsigned char* data, int sz)> cb)
 {
 	try{
 		while (is.size()){
 			unsigned char buf[1024];
 			auto sz = is.read_some(buf, sizeof(buf));
 			if (sz != -1){
-				hash(buf, sz);
+				if(cb) cb(buf, sz);
 				put_body(buf, sz);
 			}
 		}

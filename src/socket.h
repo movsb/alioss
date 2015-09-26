@@ -453,10 +453,8 @@ public:
 	bool put_head();
 	bool get_head();
 	int  get_body_len();
-	bool put_body(const void* data, size_t sz);
-	bool put_body(const void* data, size_t sz, std::function<void(const unsigned char* data, int sz)> hash);
-	bool put_body(stream::istream& is);
-	bool put_body(stream::istream& is, std::function<void(const unsigned char* data, int sz)> hash);
+    bool put_body(const void* data, size_t sz, std::function<void(const unsigned char* data, int sz)> cb = nullptr);
+    bool put_body(stream::istream& is, std::function<void(const unsigned char* data, int sz)> cb = nullptr);
 	bool get_body(void* data, size_t sz);
 	bool get_body(stream::ostream& os);
 
