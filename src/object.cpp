@@ -1,7 +1,6 @@
 #include <string>
 #include <vector>
 #include <sstream>
-#include <regex>
 #include <cstring>
 #include <functional>
 
@@ -48,10 +47,6 @@ namespace object{
 
 	bool object::delete_object(const char* obj)
 	{
-		//TODO: regex obj
-		if (!obj || !*obj)
-			throw ossexcept(ossexcept::kConflict, "Object must have a valid name.", __FUNCTION__);
-
 		std::stringstream ss;
 
 		auto& head = _http.head();
@@ -120,30 +115,6 @@ namespace object{
 
 	bool object::get_object(const char* obj, stream::ostream& os, const std::string& range/*=""*/, const std::string& unmodified_since/*=""*/)
 	{
-		//----------------------------------Argument Checking-------------------------------------
-		if (!obj || !* obj || !is_object_name_valid(obj)) throw ossexcept(ossexcept::kInvalidArgs, "Invalid argument: obj", __FUNCTION__);
-
-		if (range.size()){
-			std::regex re_range(R"(^[[:digit:]]-[[:digit:]]$)", std::regex_constants::egrep);
-			if (!std::regex_match(range, re_range))
-				throw ossexcept(ossexcept::kInvalidArgs, "Invalid argument: range", __FUNCTION__);
-			else{
-				int s, e;
-				if (sscanf(range.c_str(), "%d-%d", &s, &e) != 2
-					|| s < 0 || e < 0
-					|| s > e)
-				{
-					throw ossexcept(ossexcept::kInvalidArgs, "Invalid argument: range", __FUNCTION__);
-				}
-			}
-
-
-			std::regex re_gmt(R"([A-Z]{1}[a-z]{2}, [0-9]{2} [A-Z]{1}[a-z]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} GMT)", std::regex_constants::egrep);
-			if (!std::regex_match(unmodified_since, re_gmt))
-				throw ossexcept(ossexcept::kInvalidArgs, "Invalid argument: unmodified_since", __FUNCTION__);
-
-		}
-
 		//---------------------------- Requesting----------------------------------
 		std::stringstream ss;
 
@@ -217,19 +188,10 @@ namespace object{
 		}
 	}
 
-	// not implemented
-	bool object::is_object_name_valid(const char* obj)
-	{
-		return true;
-	}
-
 	bool object::put_object(const char* obj, stream::istream& is, 
 		const char* content_type/*=""*/, const char* content_disposition/*=""*/, 
 		const char* content_encoding/*=""*/)
 	{
-		//----------------------------------Argument Checking-------------------------------------
-		if (!obj || !* obj || !is_object_name_valid(obj)) throw ossexcept(ossexcept::kInvalidArgs, "Invalid argument: obj", __FUNCTION__);
-
 		//---------------------------- Requesting----------------------------------
 		std::stringstream ss;
 

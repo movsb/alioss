@@ -90,9 +90,6 @@ public:
 		const char* if_none_match = nullptr
 		);
 
-protected:
-	bool is_object_name_valid(const char* obj);
-
 protected: // shared objects
 	const accesskey& _key;
 	const meta::bucket& _bkt;

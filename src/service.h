@@ -47,13 +47,6 @@ private:
 		return _buckets[_buckets.size() - 1];
 	}
 
-// protected:
-// 	std::string		_prefix;
-// 	std::string		_marker;
-// 	std::string		_max_keys;
-// 	bool			_is_truncated;
-// 	std::string		_next_marker;
-
 protected:
 	meta::owner _owner;
 	std::vector<meta::bucket> _buckets;

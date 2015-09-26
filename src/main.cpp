@@ -244,7 +244,7 @@ int main()
 							std::regex re(R"(^[a-z0-9]{1}[a-z0-9\-]{1,61}[a-z0-9]{1}$)", std::regex_constants::egrep);
 							if (!std::regex_match(name, re)){
 								std::cout << cterm(4,-1)
-									<< "Sorry, invalid bucket name, constraint are:" << cterm(-1, -1) << std::endl;
+									<< "Sorry, invalid bucket name, constraints are:" << cterm(-1, -1) << std::endl;
 								std::cout
 									<< "    1. can only contains: a-z, 0-9, -\n"
 									<< "    2. must not start with or end with `-'\n"
@@ -313,7 +313,7 @@ int main()
 							<< "    mkdir <name>    create directory (need slash('/'))\n"
 							<< "    head <obj>      show object meta info\n"
 							<< "    down <obj>      download object to working directory<obj>\n"
-							<< "    up <file>       upload files to current directory,
+							<< "    up <file>       upload files to current directory,\n"
                                "                    with a `/' suffix means to upload entire folder\n"
 							<< "    svc             back to service command\n"
 							<< "    quit            quit program\n"
@@ -581,7 +581,7 @@ int main()
                                     files.clear();
                                     os::ls_files(arg.c_str(), &files);
                                     if(files.size() == 0) {
-                                        std::cerr << "Your search doesn't match anything.\n";
+                                        std::cerr << "    Your search doesn't match anything, nothing to be done.\n";
                                         goto next_bucket_cmd;
                                     }
 

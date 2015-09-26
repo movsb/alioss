@@ -2,7 +2,6 @@
 #include <iostream>
 #include <memory>
 #include <cstring>
-#include <regex>
 
 #include <tinyxml2/tinyxml2.h>
 
@@ -132,9 +131,6 @@ bool bucket::delete_bucket()
 
 bool bucket::create_bucket()
 {
-	if (!std::regex_match(_bkt.name(), std::regex(R"(^[a-z0-9]{1}[a-z0-9\-]{1,61}[a-z0-9]{1}$)", std::regex_constants::egrep)))
-		throw ossexcept(ossexcept::kInvalidArgs, "bucket name is invalid", __FUNCTION__);
-
 	std::stringstream ss;
 
 	auto& head = _http.head();
@@ -162,9 +158,6 @@ bool bucket::create_bucket()
 
 	ss.clear(); ss.str(""); ss << body.size();
 	head.add(http::header::kContentLength, std::string(ss.str()).c_str());
-
-	// Content-MD5
-	// auto md5 = content_md5(body.c_str(), body.size());
 
 	// Authorization
 	ss.clear(); ss.str("");
@@ -233,8 +226,6 @@ bool bucket::create_bucket()
 
 bool bucket::list_objects(const char* folder, bool recursive)
 {
-	//TODO: regex folder
-
 	std::stringstream ss;
 
 	auto& head = _http.head();
