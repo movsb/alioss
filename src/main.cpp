@@ -18,6 +18,7 @@
 #include "misc/strutil.h"
 #include "misc/stream.h"
 #include "misc/os.hpp"
+#include "misc/time.h"
 
 using namespace alioss;
 
@@ -524,8 +525,14 @@ int main()
 
 								object::object object(key, bkt, ep);
 								try{
-									object.get_object((cur_dir+arg).c_str(), fos);
-									std::cout << "Download completed\n";
+                                    progress pg;
+                                    std::cout << "Downloading ... ";
+                                    pg.start();
+                                    object.get_object((cur_dir + arg).c_str(), fos, [&](const unsigned char* data, int size, int total, int transferred) {
+                                        pg.set(int(float(transferred) / total * 100));
+                                    });
+                                    pg.end();
+									std::cout << "completed.\n";
 								}
 								catch (ossexcept& e){
 									ossexcept_stderr_dumper(e);
@@ -599,10 +606,16 @@ int main()
 
                                     object::object object(key, bkt, ep);
                                     try {
+                                        progress pg;
+                                        std::string obj = cur_dir + strutil::remove_relative_path_prefix(arg.c_str());
                                         std::cout << "Uploading `" << arg << "' ... ";
-                                        object.put_object((cur_dir + strutil::remove_relative_path_prefix(arg.c_str())).c_str(), fis);
+                                        pg.start();
+                                        object.put_object(obj.c_str(), fis, [&](const unsigned char* data, int size, int total, int transferred) {
+                                            pg.set(int(float(transferred) / total * 100));
+                                        });
+                                        pg.end();
                                         uploaded++;
-                                        std::cout << "succeeded!\n";
+                                        std::cout << "succeeded.\n";
                                     } catch(ossexcept& e) {
                                         ossexcept_stderr_dumper(e);
                                     }

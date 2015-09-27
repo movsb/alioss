@@ -66,7 +66,7 @@ public:
 			else, get_object() throws object_error:: Precondition failed.
 		it has GMT time format.
 	--------------------------------------------------------------------*/
-	bool get_object(const char* obj, stream::ostream& os,
+	bool get_object(const char* obj, stream::ostream& os, http::getter getter = nullptr,
 		const std::string& range="", const std::string& unmodified_since="");
 
 	/// Delete an `object' from specified `bucket'
@@ -76,6 +76,7 @@ public:
 	bool delete_object(const char* obj);
 
 	bool put_object(const char* obj, stream::istream& is,
+                    http::putter putter = nullptr,
 					const char* content_type="",
 					const char* content_disposition="",
 					const char* content_encoding="");

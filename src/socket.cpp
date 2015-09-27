@@ -4,6 +4,7 @@
 #include <cstring>
 #include <sstream>
 #include <iostream>
+#include <algorithm>
 
 #include "misc/color_term.h"
 
@@ -16,6 +17,9 @@
 #endif
 
 #include "socket.h"
+
+#undef min
+#undef max
 
 namespace alioss {
 
@@ -89,15 +93,20 @@ namespace socket {
 		return true;
 	}
 
-	bool socket::send(const void* data, size_t sz){
+	bool socket::send(const void* data, size_t sz, putter cb){
 		size_t n = 0;
 		try{
 			while (n < sz){
-				size_t sent = ::send(_sockfd, (char*)data + n, sz - n, 0);
+                int slice = std::min(int(sz - n), 102400);
+				size_t sent = ::send(_sockfd, (char*)data + n, slice, 0);
 				if (sent == (size_t)-1){
 					throw socketexcept(kSend, "[error] socket::send() failed", __FUNCTION__);
-				}
-				n += sent;
+                } else if(sent == 0) {
+                    throw socketexcept(kShutdownGracefully, "[error] socket has been shut down gracefully.", __FUNCTION__);
+                } else {
+                    if(cb) cb((unsigned char*)data + n, (int)sent, sz, n+sent);
+                    n += sent;
+                }
 			}
 		}
 		catch (...){
@@ -108,34 +117,27 @@ namespace socket {
 		return true;
 	}
 
-	size_t socket::recv(void* buf, size_t sz){
-		bool gracefully = false;
+	size_t socket::recv(void* buf, size_t sz, getter cb){
 		size_t n = 0;
 		try{
 			while (n < sz){
-				size_t read = ::recv(_sockfd, (char*)buf + n, sz - n, 0);
+                int slice = std::min(int(sz - n), 102400);
+				size_t read = ::recv(_sockfd, (char*)buf + n, slice, 0);
 				if (read == size_t(-1)){
 					throw socketexcept(kRecv, "[error] socket::recv() returns -1", __FUNCTION__);
 				}
 				else if (read == 0){ // shutdown gracefully
-					gracefully = true;
 					throw socketexcept(kShutdownGracefully, "[error] socket has been shut down gracefully.", __FUNCTION__);
 				}
 				else{
+                    if(cb) cb((unsigned char*)buf + n, (int)read, sz, n+read);
 					n += read;
 				}
 			}
 		}
 		catch (...) {
 			disconnect();
-
-			// TODO: use 'error code' + 'error msg' instead
-			if (gracefully){
-				return n;
-			}
-			else{
-				throw;
-			}
+            throw;
 		}
 		return n;
 	}
@@ -227,11 +229,10 @@ bool http::get_line(std::string* line, bool crlf){
 	return success;
 }
 
-bool http::put_body(const void* data, size_t sz, std::function<void(const unsigned char* data, int sz)> cb)
+bool http::put_body(const void* data, size_t sz, putter cb)
 {
 	try{
-		if(cb) cb((unsigned char*)data, sz);
-		send(data, sz);
+		send(data, sz, cb);
 	}
 	catch (alioss::socket::socketexcept& e){
 		e.push_stack(__FUNCTION__);
@@ -241,15 +242,22 @@ bool http::put_body(const void* data, size_t sz, std::function<void(const unsign
 	return true;
 }
 
-bool http::put_body(stream::istream& is, std::function<void(const unsigned char* data, int sz)> cb)
+bool http::put_body(stream::istream& is, putter cb)
 {
 	try{
+        int n = 0;
+        int totalsize = is.size();
 		while (is.size()){
-			unsigned char buf[1024];
-			auto sz = is.read_some(buf, sizeof(buf));
+			unsigned char buf[102400];
+            int slice = std::min(is.size(), (int)sizeof(buf));
+			auto sz = is.read_some(buf, slice);
 			if (sz != -1){
-				if(cb) cb(buf, sz);
-				put_body(buf, sz);
+                put_body(buf, sz, [&](const unsigned char* data, int size, int total, int transferred) {
+                    if(cb) {
+                        cb(data, size, totalsize, n+sz);
+                    }
+                });
+                n += sz;
 			}
 		}
 	}
@@ -262,26 +270,35 @@ bool http::put_body(stream::istream& is, std::function<void(const unsigned char*
 }
 
 
-bool http::get_body(void* data, size_t sz)
+bool http::get_body(void* data, size_t sz, getter cb)
 {
 	int len = get_body_len();
 	char* p = reinterpret_cast<char*>(data);
 
-	if (len != int(sz)){
+	if (len > int(sz)){
 		throw alioss::socket::socketexcept(alioss::socket::kBufferTooSmall, "[error] http::get_body(): buffer overflow");
 	}
 
-	return recv(p, sz)==sz;
+    return recv(p, sz, cb) == sz;
 }
 
-bool http::get_body(stream::ostream& os)
+bool http::get_body(stream::ostream& os, getter cb)
 {
 	int len = get_body_len();
 	int n = 0;
 	while (n < len){
-		unsigned char buf[1024];
-		auto readn = recv(buf, sizeof(buf));
-		n += os.write_some(buf, int(readn));
+		unsigned char buf[102400];
+        size_t slice = std::min(len - n, (int)sizeof(buf));
+        size_t readn = 0;
+        readn = recv(buf, slice, [&](const unsigned char* data, int size, int total, int transferred) {
+            if(cb) {
+                cb(data, size, len, n+readn);
+            }
+        });
+        if(os.write_some(buf, int(readn)) != readn) {
+
+        }
+        n += readn;
 	}
 
 	return true;

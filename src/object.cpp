@@ -113,7 +113,7 @@ namespace object{
 		return true;
 	}
 
-	bool object::get_object(const char* obj, stream::ostream& os, const std::string& range/*=""*/, const std::string& unmodified_since/*=""*/)
+	bool object::get_object(const char* obj, stream::ostream& os, http::getter getter, const std::string& range/*=""*/, const std::string& unmodified_since/*=""*/)
 	{
 		//---------------------------- Requesting----------------------------------
 		std::stringstream ss;
@@ -166,7 +166,7 @@ namespace object{
 		auto& status = head.get_status();
 
 		if (status == "200"){
-			_http.get_body(os);
+			_http.get_body(os, getter);
 			disconnect();
 			return true;
 		}
@@ -188,7 +188,7 @@ namespace object{
 		}
 	}
 
-	bool object::put_object(const char* obj, stream::istream& is, 
+	bool object::put_object(const char* obj, stream::istream& is, http::putter putter,
 		const char* content_type/*=""*/, const char* content_disposition/*=""*/, 
 		const char* content_encoding/*=""*/)
 	{
@@ -239,8 +239,9 @@ namespace object{
 		_http.put_head();
 
 		crypto::cmd5 body_md5;
-		_http.put_body(is, [&](const unsigned char* data, int sz){
+		_http.put_body(is, [&](const unsigned char* data, int sz, int total, int transferred){
 			body_md5.update(data, sz);
+            if(putter) putter(data, sz, total, transferred);
 		});
 		body_md5.finish();
 

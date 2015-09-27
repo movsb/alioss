@@ -160,6 +160,9 @@ protected:
 	struct addrinfo* _paddr;
 };
 
+typedef std::function<void(const unsigned char* data, int size, int total, int transferred)> getter;
+typedef std::function<void(const unsigned char* data, int size, int total, int transferred)> putter;
+
 class socket {
 public:
 	socket()
@@ -179,8 +182,8 @@ public:
 	bool connect(const char* ip, int port);
 	bool disconnect();
 	bool alive() { return _alive; }
-	bool send(const void* data, size_t sz);
-	size_t recv(void* buf, size_t sz);
+    bool send(const void* data, size_t sz, putter cb = nullptr);
+    size_t recv(void* buf, size_t sz, getter cb = nullptr);
 
 protected:
 	void set_alive(bool alive){
@@ -443,6 +446,9 @@ protected:
 
 const char* const scrlf = "\r\n";
 
+typedef socket::getter getter;
+typedef socket::putter putter;
+
 class http : public socket::socket
 {
 public:
@@ -453,10 +459,10 @@ public:
 	bool put_head();
 	bool get_head();
 	int  get_body_len();
-    bool put_body(const void* data, size_t sz, std::function<void(const unsigned char* data, int sz)> cb = nullptr);
-    bool put_body(stream::istream& is, std::function<void(const unsigned char* data, int sz)> cb = nullptr);
-	bool get_body(void* data, size_t sz);
-	bool get_body(stream::ostream& os);
+    bool put_body(const void* data, size_t sz, putter cb = nullptr);
+    bool put_body(stream::istream& is, putter cb = nullptr);
+    bool get_body(void* data, size_t sz, getter cb = nullptr);
+    bool get_body(stream::ostream& os, getter cb = nullptr);
 
 	bool get_line(std::string* line, bool crlf=false);
 
