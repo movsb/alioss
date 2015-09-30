@@ -8,6 +8,10 @@
 #include <functional>
 #include <regex>
 
+#ifdef _WIN32
+#include <direct.h>
+#endif
+
 #include "socket.h"
 #include "osserror.h"
 #include "service.h"
@@ -67,6 +71,16 @@ int exec_sys_cmd(const char* cmd, const char* arg="")
 	if (!cmd || !*cmd) return 0;
 
 	std::string s(cmd);
+
+#ifdef _WIN32
+    // windows 上执行cd不起作用
+    if(s == "cd" && arg && *arg) {
+        if(_chdir(arg) != 0)
+            std::cerr << "failed to chdir call\n";
+        return -1;
+    }
+#endif
+
 	s += " ";
 	s += arg;
 	return system(s.c_str());
