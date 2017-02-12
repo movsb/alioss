@@ -31,8 +31,13 @@ namespace alioss {
                         )
                     {
                         std::string file = dir + fd.cFileName;
+                        // TODO warning on cast
                         strutil::normalize_slash(const_cast<char*>(file.c_str()));
-                        files->push_back(file);
+#ifdef _WIN32
+                                    files->emplace_back(strutil::to_utf8(file));
+#else
+                                    files->emplace_back(file);
+#endif
                     }
                     else if(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
                         bool filtered =

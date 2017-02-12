@@ -10,23 +10,42 @@ Desc	: String manipulation
 
 #include <string>
 #include <vector>
+#include <unordered_set>
 #include <sstream>
+#include <codecvt>
+#include <memory>
 
 namespace alioss{
-	namespace strutil{
+namespace strutil{
+std::string strip(const std::string& s);
+std::string strip(const char* s, int len=-1);
+const char* normalize_slash(char* path);
+const char* remove_relative_path_prefix(const char* path);
 
-		std::string strip(const std::string& s);
-		std::string strip(const char* s, int len=-1);
-        const char* normalize_slash(char* path);
-        const char* remove_relative_path_prefix(const char* path);
+inline void clear(std::stringstream& ss) {
+    ss.clear();
+    ss.str("");
 
-        inline void clear(std::stringstream& ss) {
-            ss.clear();
-            ss.str("");
-        }
-	}
+}
+
+typedef std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> U8U16Cvt;
+
+inline std::wstring from_utf8(const std::string& s)
+{
+    return U8U16Cvt().from_bytes(s);
+}
+
+inline std::string to_utf8(const std::wstring& s)
+{
+    return U8U16Cvt().to_bytes(s);
+}
+
+std::string to_utf8(const std::string& s);
+
+std::string encode_uri_component(const std::string& s);
+
+}
 }
 
 
 #endif //!__alioss_strutil_h__
-

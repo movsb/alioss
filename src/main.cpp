@@ -126,7 +126,13 @@ bool read_access_key(accesskey* key)
 
 int main()
 {
+#ifdef _WIN32
+    SetConsoleCP(CP_UTF8);
+    SetConsoleOutputCP(CP_UTF8);
+#endif
+
 	signal(SIGINT, [](int){});
+
 #ifdef _WIN32
 	socket::wsa wsa;
 #endif
@@ -149,8 +155,6 @@ int main()
 		socketerror_stderr_dumper(e);
 		return 1;
 	}
-
-
 
 	accesskey key;
 	try{
@@ -328,8 +332,7 @@ int main()
 							<< "    mkdir <name>    create directory (need slash('/'))\n"
 							<< "    head <obj>      show object meta info\n"
 							<< "    down <obj>      download object to working directory<obj>\n"
-							<< "    up <file>       upload files to current directory,\n"
-                               "                    with a `/' suffix means to upload entire folder\n"
+							<< "    up <obj/dir>    upload files/folder to current directory,\n"
 							<< "    svc             back to service command\n"
 							<< "    quit            quit program\n"
 							<< "    help            show this help message\n"
@@ -558,8 +561,6 @@ int main()
 									goto next_bucket_cmd;
 								}
 
-                                bool is_folder = arg.back() == '/' || arg.back() == '\\';
-
 								class file_istream : public stream::istream{
 								public:
 									virtual int size() const override{
@@ -595,17 +596,13 @@ int main()
 								};
 
                                 std::vector<std::string> files;
-                                if(is_folder == false) {
-                                    files.push_back(arg.c_str());
+                                files.clear();
+                                os::ls_files(arg.c_str(), &files);
+                                if(files.empty()) {
+                                    std::cerr << "    Your search doesn't match anything, nothing to be done.\n";
+                                    goto next_bucket_cmd;
                                 }
-                                else {
-                                    files.clear();
-                                    os::ls_files(arg.c_str(), &files);
-                                    if(files.size() == 0) {
-                                        std::cerr << "    Your search doesn't match anything, nothing to be done.\n";
-                                        goto next_bucket_cmd;
-                                    }
-
+                                else if(files.size() > 1) {
                                     std::cout << "    " << files.size() << " file(s) will be uploaded.\n";
                                 }
 

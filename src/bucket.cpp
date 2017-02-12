@@ -165,7 +165,7 @@ bool bucket::create_bucket()
 		<< "\n" // no content-md5 requested
 		<< "text/xml\n"
 		<< date << "\n"
-		<< '/' << _bkt.name() << '/';
+		<< '/';
 
 	head.add_authorization(signature(_key, std::string(ss.str())).c_str());
 

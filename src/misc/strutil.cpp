@@ -1,5 +1,9 @@
 #include "strutil.h"
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 namespace alioss{
 	namespace strutil{
 
@@ -66,7 +70,62 @@ namespace alioss{
             return path;
         }
 
-        const char* normalize_slash(char* path) {
+        std::string to_utf8(const std::string& s)
+        {
+            std::string ret;
+
+#ifdef _WIN32
+            int cch = ::MultiByteToWideChar(CP_ACP, 0, s.c_str(), -1, nullptr, 0);
+            if(cch > 0) {
+                auto ws = std::make_unique<wchar_t[]>(cch);
+                if(::MultiByteToWideChar(CP_ACP, 0, s.c_str(), -1, ws.get(), cch) > 0) {
+                    ret = to_utf8(ws.get());
+                }
+            }
+#else
+            assert(0);
+#endif
+            return ret;
+        }
+
+        // `s' must be utf-8
+        std::string encode_uri_component(const std::string& s)
+        {
+            // reserved characters, includes '%' itself
+            // static const std::unordered_set<char> reserved_chars {'%', '!','*','\'', '(', ')', ';', ':', '@', '&', '=', '+', '&', ',', '/', '?', '#', '[', ']'};
+            // static const std::unordered_set<char> unreserved_chars {/*  A-Z a-z 0-9 */ '-', '_', '.', '~'};
+            static const char hex_digits[16] = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
+
+            std::string r;
+            r.reserve(s.size() * 3);
+
+            for(size_t i = 0, n = s.size(); i < n; i++) {
+                int c = static_cast<unsigned char>(s[i]);
+                if(c < 128 
+                    && ('A' <= c && c <= 'Z' 
+                        || 'a' <= c && c <= 'z' 
+                        || '0' <= c && c <= '9'
+                        || c == '-'
+                        || c == '_'
+                        || c == '.'
+                        || c == '~'
+                        )
+                    )
+                {
+                    r += char(c);
+                }
+                else {
+                    r += '%';
+                    r += hex_digits[c >> 4];
+                    r += hex_digits[c & 15];
+                }
+            }
+
+            return std::move(r);
+        }
+
+        const char* normalize_slash(char* path)
+        {
             auto s = path;
             while(*path) {
                 if(*path == '\\')
