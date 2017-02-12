@@ -68,7 +68,7 @@ bool service::list_buckets()
 	auto& status = head.get_status();
 	if (status == "200") {
 		tinyxml2::XMLDocument xmldoc;
-		if (xmldoc.Parse((char*)bs.data(), bs.size()) != tinyxml2::XMLError::XML_NO_ERROR)
+		if (xmldoc.Parse((char*)bs.data(), bs.size()) != tinyxml2::XMLError::XML_SUCCESS)
 			throw ossexcept(ossexcept::kXmlError, "Xml not well-formed", __FUNCTION__);
 
 		auto buckets_result = xmldoc.FirstChildElement("ListAllMyBucketsResult");

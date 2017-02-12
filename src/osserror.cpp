@@ -10,7 +10,7 @@ namespace alioss {
 void osserr::parse(const char* xml, int size)
 {
 	tinyxml2::XMLDocument xmldoc;
-	if (xmldoc.Parse(xml, size) == tinyxml2::XMLError::XML_NO_ERROR){
+	if (xmldoc.Parse(xml, size) == tinyxml2::XMLError::XML_SUCCESS){
 		parse(&xmldoc);
 	}
 }

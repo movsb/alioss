@@ -196,7 +196,7 @@ bool bucket::create_bucket()
 	if (status == "200") return true;
 
 	tinyxml2::XMLDocument doc;
-	if (doc.Parse((char*)bs.data(), bs.size()) == tinyxml2::XMLError::XML_NO_ERROR){
+	if (doc.Parse((char*)bs.data(), bs.size()) == tinyxml2::XMLError::XML_SUCCESS){
 		std::string ec(doc.FirstChildElement("Error")->FirstChildElement("Code")->FirstChild()->ToText()->Value());
 		if (ec == "InvalidLocationConstraint"){
 			auto oe = new bucket_error::invalid_location_constraint(&doc);
@@ -284,7 +284,7 @@ bool bucket::list_objects(const char* folder, bool recursive)
 	auto& status = head.get_status();
 	if (status == "200") {
 		tinyxml2::XMLDocument doc;
-		if (doc.Parse((char*)bs.data(), bs.size()) == tinyxml2::XMLError::XML_NO_ERROR){
+		if (doc.Parse((char*)bs.data(), bs.size()) == tinyxml2::XMLError::XML_SUCCESS){
 			// TODO: UTF-8 convert (Windows)
 			auto List_bucket_result = doc.FirstChildElement("ListBucketResult");
 			
@@ -328,7 +328,7 @@ bool bucket::list_objects(const char* folder, bool recursive)
 	}
 
 	tinyxml2::XMLDocument doc;
-	if (doc.Parse((char*)bs.data(), bs.size()) == tinyxml2::XMLError::XML_NO_ERROR){
+	if (doc.Parse((char*)bs.data(), bs.size()) == tinyxml2::XMLError::XML_SUCCESS){
 		std::string ec(doc.FirstChildElement("Error")->FirstChildElement("Code")->FirstChild()->ToText()->Value());
 		if (ec == "NoSuchBucket" || ec == "AccessDenied" || ec == "InvalidArgument"){
 			auto oe = new bucket_error::invalid_location_constraint(&doc);

@@ -22,7 +22,7 @@ char *base64_encode(const unsigned char *data,
     char *encoded_data = (char*)malloc(*output_length);
     if (encoded_data == NULL) return NULL;
 
-    for (int i = 0, j = 0; i < input_length;) {
+    for (size_t i = 0, j = 0; i < input_length;) {
 
         uint32_t octet_a = i < input_length ? (unsigned char)data[i++] : 0;
         uint32_t octet_b = i < input_length ? (unsigned char)data[i++] : 0;

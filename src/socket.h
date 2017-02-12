@@ -166,7 +166,7 @@ typedef std::function<void(const unsigned char* data, int size, int total, int t
 class socket {
 public:
 	socket()
-		: _sockfd(-1)
+		: _sockfd(INVALID_SOCKET)
 		, _alive(false)
 	{}
 

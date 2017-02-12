@@ -117,7 +117,7 @@ bool read_access_key(accesskey* key)
 	}
 
 	if(keyid.size() != 16 || keysec.size() != 30) {
-		throw std::string("Your alioss key/sec/ is invalid!");
+		throw std::string("Your alioss key/sec is invalid!");
 	}
 
 	key->set_key(keyid.c_str(), keysec.c_str());
@@ -319,7 +319,7 @@ int main()
 
 					auto la_command_bucket = [&](){
 						std::cout << cterm(2, -1) << "Commands for: " << "Bucket" << cterm(-1, -1) << std::endl;
-						std::cout
+                        std::cout
 							<< "    list            list objects in current directory\n"
 							<< "    cd [dir]        change directory (no slash('/'), no recursion)\n"
 							<< "    pwd             print working directory(oss', not system)\n"
@@ -506,7 +506,7 @@ int main()
 								class file_ostream : public stream::ostream{
 								public:
 									virtual int size() const override{
-										return _fstm.width(); // ???
+										return static_cast<int>(_fstm.width()); // ???
 									}
 									virtual int write_some(const unsigned char* buf, int sz) override{
 										_fstm.write((char*)buf, sz);
