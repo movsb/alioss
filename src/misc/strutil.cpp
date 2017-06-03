@@ -70,6 +70,17 @@ namespace alioss{
             return path;
         }
 
+        std::string dirname(const std::string& path)
+        {
+            auto index = path.find_last_of("/\\");
+            if (index != path.npos) {
+                return path.substr(0, index - 0);
+            }
+            else {
+                return "";
+            }
+        }
+
         std::string to_utf8(const std::string& s)
         {
             std::string ret;

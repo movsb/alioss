@@ -19,9 +19,14 @@ namespace alioss {
 
 #ifdef _WIN32
 
+            std::string dirname = strutil::dirname(dir);
+            if (!dirname.empty()) {
+                dirname += '/';
+            }
+
             WIN32_FIND_DATA fd;
             HANDLE hfind;
-            if((hfind = ::FindFirstFile((dir + "*").c_str(), &fd)) != INVALID_HANDLE_VALUE) {
+            if((hfind = ::FindFirstFile((dir).c_str(), &fd)) != INVALID_HANDLE_VALUE) {
                 do {
                     if(fd.dwFileAttributes & FILE_ATTRIBUTE_ARCHIVE
                         || fd.dwFileAttributes & FILE_ATTRIBUTE_COMPRESSED
@@ -30,7 +35,7 @@ namespace alioss {
                         || fd.dwFileAttributes & FILE_ATTRIBUTE_READONLY
                         )
                     {
-                        std::string file = dir + fd.cFileName;
+                        std::string file = dirname + fd.cFileName;
                         // TODO warning on cast
                         strutil::normalize_slash(const_cast<char*>(file.c_str()));
 #ifdef _WIN32
@@ -47,7 +52,7 @@ namespace alioss {
                                 )
                             ;
                         if(!filtered)
-                            ls_files(dir + fd.cFileName + '/', files);
+                            ls_files(dirname + fd.cFileName + '/', files);
                     }
                 } while(::FindNextFile(hfind, &fd));
                 ::FindClose(hfind);
