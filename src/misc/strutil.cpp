@@ -99,40 +99,95 @@ namespace alioss{
             return ret;
         }
 
-        // `s' must be utf-8
-        std::string encode_uri_component(const std::string& s)
+        // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURI
+        // encodeURI escapes all characters except:
+        //      A-Z a-z 0-9 ; , / ? : @ & = + $ - _ . ! ~ * ' ( ) #
+        std::string encode_uri(const std::string& s)
         {
-            // reserved characters, includes '%' itself
-            // static const std::unordered_set<char> reserved_chars {'%', '!','*','\'', '(', ')', ';', ':', '@', '&', '=', '+', '&', ',', '/', '?', '#', '[', ']'};
-            // static const std::unordered_set<char> unreserved_chars {/*  A-Z a-z 0-9 */ '-', '_', '.', '~'};
             static const char hex_digits[16] = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
 
-            std::string r;
-            r.reserve(s.size() * 3);
+            std::string ret;
+            ret.reserve(s.size() * 3);
 
-            for(size_t i = 0, n = s.size(); i < n; i++) {
+            for (size_t i = 0, n = s.size(); i < n; i++) {
                 int c = static_cast<unsigned char>(s[i]);
-                if(c < 128 
-                    && ('A' <= c && c <= 'Z' 
-                        || 'a' <= c && c <= 'z' 
-                        || '0' <= c && c <= '9'
-                        || c == '-'
-                        || c == '_'
-                        || c == '.'
-                        || c == '~'
-                        )
+                if (c < 128 && (
+                    'A' <= c && c <= 'Z'
+                    || 'a' <= c && c <= 'z'
+                    || '0' <= c && c <= '9'
+                    || c == ';'
+                    || c == ','
+                    || c == '/'
+                    || c == '?'
+                    || c == ':'
+                    || c == '@'
+                    || c == '&'
+                    || c == '='
+                    || c == '+'
+                    || c == '$'
+                    || c == '-'
+                    || c == '_'
+                    || c == '.'
+                    || c == '!'
+                    || c == '~'
+                    || c == '*'
+                    || c == '\''
+                    || c == '('
+                    || c == ')'
+                    || c == '#'
                     )
+                )
                 {
-                    r += char(c);
+                    ret += char(c);
                 }
                 else {
-                    r += '%';
-                    r += hex_digits[c >> 4];
-                    r += hex_digits[c & 15];
+                    ret += '%';
+                    ret += hex_digits[c >> 4];
+                    ret += hex_digits[c & 15];
                 }
             }
 
-            return std::move(r);
+            return std::move(ret);
+        }
+
+        // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURIComponent
+        // encodeURIComponent escapes all characters except:
+        //      A-Z a-z 0-9 - _ . ! ~ * ' ( )
+        std::string encode_uri_component(const std::string& s)
+        {
+            static const char hex_digits[16] = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
+
+            std::string ret;
+            ret.reserve(s.size() * 3);
+
+            for(size_t i = 0, n = s.size(); i < n; i++) {
+                int c = static_cast<unsigned char>(s[i]);
+                if(c < 128 && (
+                    'A' <= c && c <= 'Z'
+                    || 'a' <= c && c <= 'z'
+                    || '0' <= c && c <= '9'
+                    || c == '-'
+                    || c == '_'
+                    || c == '.'
+                    || c == '!'
+                    || c == '~'
+                    || c == '*'
+                    || c == '\''
+                    || c == '('
+                    || c == ')'
+                    )
+                )
+                {
+                    ret += char(c);
+                }
+                else {
+                    ret += '%';
+                    ret += hex_digits[c >> 4];
+                    ret += hex_digits[c & 15];
+                }
+            }
+
+            return std::move(ret);
         }
 
         const char* normalize_slash(char* path)

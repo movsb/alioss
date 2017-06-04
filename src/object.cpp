@@ -56,7 +56,7 @@ namespace object{
 		//---------------------------- Requesting----------------------------------
 		// Verb
 		ss.clear(); ss.str("");
-		ss << "DELETE " << strutil::encode_uri_component(obj) << " HTTP/1.1";
+		ss << "DELETE " << strutil::encode_uri(obj) << " HTTP/1.1";
 		head.set_verb(std::string(ss.str()).c_str());
 
 		// Host
@@ -73,7 +73,7 @@ namespace object{
 		ss << "DELETE\n";
 		ss << "\n\n";
 		ss << date << "\n";
-		ss << "/" << strutil::encode_uri_component(_bkt.name() + obj);
+		ss << "/" << strutil::encode_uri(_bkt.name() + obj);
 		head.add_authorization(signature(_key, std::string(ss.str())).c_str());
 
 		// Connection
@@ -123,7 +123,7 @@ namespace object{
 
 		// Verb
 		ss.clear(); ss.str("");
-		ss << "GET " << strutil::encode_uri_component(obj) << " HTTP/1.1";
+		ss << "GET " << strutil::encode_uri(obj) << " HTTP/1.1";
 		head.set_verb(std::string(ss.str()).c_str());
 
 		// Host
@@ -140,7 +140,7 @@ namespace object{
 		ss << "GET\n";
 		ss << "\n\n";
 		ss << date << "\n";
-		ss << "/" << strutil::encode_uri_component(_bkt.name() + obj);
+		ss << "/" << strutil::encode_uri(_bkt.name() + obj);
 		head.add_authorization(signature(_key, std::string(ss.str())).c_str());
 
 		// Range & Unmodified-Since
@@ -199,7 +199,7 @@ namespace object{
 
 		// Verb
 		ss.clear(); ss.str("");
-		ss << "PUT " << strutil::encode_uri_component(obj) << " HTTP/1.1";
+		ss << "PUT " << strutil::encode_uri(obj) << " HTTP/1.1";
 		head.set_verb(std::string(ss.str()).c_str());
 
 		// Content-Length & Content-Type && Content-Disposition && Content-Encoding
@@ -226,7 +226,7 @@ namespace object{
 		ss << "\n";
 		ss << content_type << "\n";
 		ss << date << "\n";
-		ss << "/" << strutil::encode_uri_component(_bkt.name() + obj);
+		ss << "/" << strutil::encode_uri(_bkt.name() + obj);
 		head.add_authorization(signature(_key, std::string(ss.str())).c_str());
 
 		// Connection
@@ -305,7 +305,7 @@ namespace object{
 
 		// Verb
 		ss.clear(); ss.str("");
-		ss << "HEAD " << strutil::encode_uri_component(obj) << " HTTP/1.1";
+		ss << "HEAD " << strutil::encode_uri(obj) << " HTTP/1.1";
 		head.set_verb(std::string(ss.str()));
 
 		// Host
@@ -322,7 +322,7 @@ namespace object{
 		ss << "HEAD\n";
 		ss << "\n\n";
 		ss << date << "\n";
-		ss << "/" << strutil::encode_uri_component(_bkt.name() + obj);
+		ss << "/" << strutil::encode_uri(_bkt.name() + obj);
 		head.add_authorization(signature(_key, std::string(ss.str())));
 
 		// Connection
