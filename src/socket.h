@@ -112,7 +112,7 @@ public:
 	const std::string& ip() const { return _ip; }
 	int port() const { return _port; }
 
-	void set_ep(const char* ip, int port){
+	void set_ep(const std::string& ip, int port){
 		_ip = ip;
 		_port = port;
 	}
@@ -132,7 +132,7 @@ public:
 		free();
 	}
 
-	bool resolve(const char* host, const char* service);
+	bool resolve(const std::string& host, const std::string& service);
 
 	void free() {
 		_size = 0;

@@ -25,7 +25,7 @@ namespace alioss {
 
 namespace socket {
 	// resolver
-	bool resolver::resolve(const char* host, const char* service){
+	bool resolver::resolve(const std::string& host, const std::string& service){
 		struct addrinfo hints;
 		struct addrinfo* pres = nullptr;
 		int res;
@@ -37,7 +37,7 @@ namespace socket {
 		hints.ai_socktype = SOCK_STREAM;
 		hints.ai_protocol = IPPROTO_TCP;
 
-		res = ::getaddrinfo(host, service, &hints, &pres);
+		res = ::getaddrinfo(host.c_str(), service.c_str(), &hints, &pres);
 		if (res != 0){
 			_paddr = nullptr;
 			_size = 0;

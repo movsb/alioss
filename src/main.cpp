@@ -166,7 +166,7 @@ int main()
 	}
 
 	socket::endpoint ep;
-	ep.set_ep(resolver[0].c_str(), 80);
+	ep.set_ep(resolver[0], 80);
 
 	try {
 		color_term::color_term cterm;
@@ -279,8 +279,8 @@ int main()
                     try {
                         const auto& bktinfo = svc.buckets()[id - 1];
                         socket::resolver resolver;
-                        resolver.resolve((bktinfo.location() + meta::oss_server_suffix).c_str(), "http");
-                        bep.set_ep(resolver[0].c_str(), 80);
+                        resolver.resolve(bktinfo.location() + meta::oss_server_suffix, "http");
+                        bep.set_ep(resolver[0], 80);
                     }
                     catch(socket::socketexcept& e) {
                         socketerror_stderr_dumper(e);

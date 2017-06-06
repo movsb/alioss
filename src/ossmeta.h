@@ -21,16 +21,16 @@ namespace meta {
 class owner {
 public:
 	owner() {}
-	owner(const char* id, const char* name)
+	owner(const std::string& id, const std::string& name)
 		: _id(id)
 		, _display_name(name)
 	{}
 
-	void set_id(const char* id) {
+	void set_id(const std::string& id) {
 		_id = id;
 	}
 
-	void set_display_name(const char* name){
+	void set_display_name(const std::string& name){
 		_display_name = name;
 	}
 
@@ -51,27 +51,27 @@ class bucket{
 public:
 	bucket() {}
 
-	bucket(const char* name, const char*	loc, const char* date)
+	bucket(const std::string& name, const std::string& loc, const std::string& date)
 		: _name(name)
 		, _location(loc)
 		, _creation_date(date)
 	{}
 
-	void set_name(const char* name) {
+	void set_name(const std::string& name) {
 		_name = name;
 	}
 	const std::string& name() const {
 		return _name;
 	}
 
-	void set_location(const char* loc){
+	void set_location(const std::string& loc){
 		_location = loc;
 	}
 	const std::string& location() const {
 		return _location;
 	}
 
-	void set_creation_date(const char* date){
+	void set_creation_date(const std::string& date){
 		_creation_date = date;
 	}
 	const std::string& creation_date() const {
