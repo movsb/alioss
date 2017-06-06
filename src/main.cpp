@@ -182,8 +182,6 @@ int main()
 			std::cout << cterm(2, -1) << "Commands for: " << "Service" << cterm(-1, -1) << std::endl;
 			std::cout 
 				<< "    list                list buckets\n"
-				<< "    create...           create new bucket\n"
-				<< "    del <id>            delete bucket by id <id>\n"
 				<< "    enter <id>          enter some bucket\n"
 				<< "    quit                quit program\n"
 				<< "    help                display help text\n"
@@ -204,8 +202,6 @@ int main()
 
 			const char* service_cmds[] = {
 				"list",
-				"create",
-				"del",
 				"enter",
 				"quit",
 				"help",
@@ -230,83 +226,7 @@ int main()
 			std::vector<int> match;
 			if (find_cmd(service_cmds, cmd.c_str(), &match) || match.size()==1){
 				std::string thecmd(service_cmds[match.back()]);
-				if (thecmd == "create"){
-					std::cout << cterm(2, -1);
-					printf("    %-4s%-16s%s","ID","Location","Location-Alias");
-					std::cout << cterm(-1, -1) << std::endl;
-
-					for (int i = 0; i<meta::oss_data_center_count; i++){
-						auto& dc = meta::oss_data_center[i];
-						printf("    %-4d%-16s%s\n", i + 1, dc.name, dc.location);
-					}
-					std::cout << std::endl;
-
-					int id;
-					std::string name;
-
-					for (const char* prompt = "Please input location-id & new bucket-name: ";;){
-						std::string line;
-						std::cout << prompt;
-						std::getline(std::cin, line, '\n');
-						if (line.size() == 0) goto next_cmd;
-
-						std::stringstream liness(line);
-						if (liness >> id >> name){
-							if (id<1 || id>meta::oss_data_center_count){
-								std::cout << cterm(4, -1) << "invalid location id - " << id << ", "
-									<< "range: " << 1 << "-" << meta::oss_data_center_count
-									<< cterm(-1, -1) << std::endl;
-								prompt = "Try again: ";
-								continue;
-							}
-
-							std::regex re(R"(^[a-z0-9]{1}[a-z0-9\-]{1,61}[a-z0-9]{1}$)", std::regex_constants::egrep);
-							if (!std::regex_match(name, re)){
-								std::cout << cterm(4,-1)
-									<< "Sorry, invalid bucket name, constraints are:" << cterm(-1, -1) << std::endl;
-								std::cout
-									<< "    1. can only contains: a-z, 0-9, -\n"
-									<< "    2. must not start with or end with `-'\n"
-									<< "    3. the length must be in range of 3-63\n"
-									<< std::endl;
-								prompt = "Try again: ";
-								continue;
-							}
-							break;
-						}
-						else{
-							prompt = "invalid input, try again: ";
-						}
-					}
-
-					try{
-						meta::bucket bkt(name.c_str(), meta::oss_data_center[id-1].location,"");
-						bucket::bucket bucket(key, bkt, ep);
-						bucket.create_bucket();
-						std::cout << cterm(2, -1) << "Successfully created!" << cterm(-1, -1) << std::endl;
-					}
-					catch (ossexcept& e){
-						ossexcept_stderr_dumper(e);
-					}
-				}
-				else if(thecmd == "del"){
-					int id = 0;
-					if (arg.size() == 0 || (id = atoi(arg.c_str())) <= 0 || id > (int)svc.buckets().size()){
-						std::cout << "del - Invalid bucket ID!\n";
-						goto next_cmd;
-					}
-
-					try{
-						meta::bucket bkt(svc.buckets()[id - 1].name().c_str(), svc.buckets()[id-1].location().c_str(),"");
-						bucket::bucket bucket(key, bkt, ep);
-						bucket.delete_bucket();
-						std::cout << cterm(2, -1) << "Successfully deleted!" << cterm(-1, -1) << std::endl;
-					}
-					catch (ossexcept& e){
-						ossexcept_stderr_dumper(e);
-					}
-				}
-				else if (thecmd == "list"){
+				if (thecmd == "list"){
 					svc.list_buckets();
 					svc.dump_buckets([&](int i, const meta::bucket& bkt){
 						std::cout << cterm(3, -1) << i << cterm(-1, -1) << ": " << bkt.name() << std::endl;

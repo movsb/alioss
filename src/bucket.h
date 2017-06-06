@@ -64,12 +64,6 @@ public:
 	bool connect();
 	bool disconnect();
 
-	// Delete this bucket
-	bool delete_bucket();
-
-	// Create bucket from _bkt
-	bool create_bucket();
-
 	// List specified object(s)
 	// folder: must be "" or "/folder_name/folder2/"
 	bool list_objects(const char* folder="", bool recursive=false);
