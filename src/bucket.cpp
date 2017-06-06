@@ -256,7 +256,7 @@ bool bucket::list_objects(const char* folder, bool recursive)
 	ss << "GET\n";
 	ss << "\n\n";
 	ss << date << "\n";
-	ss << "/" << _bkt.name() << "/";
+    ss << "/" << _bkt.name() << "/";
 	head.add_authorization(signature(_key, std::string(ss.str())).c_str());
 
 	// Connection

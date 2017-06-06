@@ -338,6 +338,7 @@ int main()
 							<< "    help            show this help message\n"
 							;
 					};
+
 					const char* bucket_cmds[] = {
 						"list",
 						"cd",
@@ -353,9 +354,21 @@ int main()
 						nullptr
 					};
 
+                    socket::endpoint bep;
+
+                    try {
+                        const auto& bktinfo = svc.buckets()[id - 1];
+                        socket::resolver resolver;
+                        resolver.resolve((bktinfo.location() + meta::oss_server_suffix).c_str(), "http");
+                        bep.set_ep(resolver[0].c_str(), 80);
+                    }
+                    catch(socket::socketexcept& e) {
+                        socketerror_stderr_dumper(e);
+                        goto next_cmd;
+                    }
 
 					meta::bucket bkt(svc.buckets()[id-1].name().c_str(), svc.buckets()[id-1].location().c_str(), "");
-					bucket::bucket bucket(key, bkt, ep);
+					bucket::bucket bucket(key, bkt, bep);
 
 					la_command_bucket();
 
