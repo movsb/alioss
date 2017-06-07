@@ -16,7 +16,6 @@
 #include "osserror.h"
 #include "service.h"
 #include "bucket.h"
-#include "object.h"
 #include "ossmeta.h"
 #include "misc/color_term.h"
 #include "misc/strutil.h"
@@ -26,79 +25,6 @@
 #include "misc/dirmgr.h"
 
 using namespace alioss;
-
-bool read_command(std::string* cmd, std::string* arg, const char* prompt="")
-{
-	color_term::color_term cterm;
-	std::string str;
-
-next_cmd:
-	std::cout << cterm(3, -1) << "alioss";
-	if (prompt&&*prompt){
-		std::cout << " " << prompt << "> ";
-	}
-	else{
-		std::cout << "> ";
-	}
-
-	std::cout << cterm(-1, -1);
-
-	std::getline(std::cin, str, '\n');
-	str = strutil::strip(str);
-	if (!str.size()) goto next_cmd;
-
-	auto pos = str.find(' ');
-	if (pos == std::string::npos)
-		pos = str.find('\t');
-
-	if (pos != std::string::npos){
-		*cmd = str.substr(0, pos - 0);
-		const char* p = &str[pos];
-		while (*p && (*p == ' ' || *p == '\t'))
-			++p;
-		*arg = std::string(p);
-	}
-	else{
-		*cmd = str;
-		*arg = "";
-	}
-
-	cterm.restore();
-	return true;
-}
-
-std::string read_string(const std::string& prompt)
-{
-retry:
-    std::string str;
-
-    std::cout << prompt;
-    std::getline(std::cin, str, '\n');
-    str = strutil::strip(str);
-    if(str.empty()) goto retry;
-
-    return str;
-}
-
-int exec_sys_cmd(const char* cmd, const char* arg="")
-{
-	if (!cmd || !*cmd) return 0;
-
-	std::string s(cmd);
-
-#ifdef _WIN32
-    // windows 上执行cd不起作用
-    if(s == "cd" && arg && *arg) {
-        if(_chdir(arg) != 0)
-            std::cerr << "failed to chdir call\n";
-        return -1;
-    }
-#endif
-
-	s += " ";
-	s += arg;
-	return system(s.c_str());
-}
 
 bool read_access_key(accesskey* key)
 {
@@ -138,6 +64,7 @@ bool read_access_key(accesskey* key)
 	return true;
 }
 
+//int main(int argc, const char* argv[])
 int main()
 {
 #ifdef _WIN32
@@ -159,11 +86,6 @@ int main()
 #endif
 		std::cout << "resolving oss.aliyuncs.com ...";
 		resolver.resolve("oss.aliyuncs.com", "http");
-
-		std::cout << std::endl;
-		for (int i = 0; i < (int)resolver.size(); i++){
-			std::cout << "  " << resolver[i] << std::endl;
-		}
 	}
 	catch (socket::socketexcept& e){
 		socketerror_stderr_dumper(e);
@@ -193,392 +115,60 @@ int main()
 		std::cout << cterm(2,-1) << "Success!" << cterm(-1,-1) << std::endl;
 
 		auto la_command_service = [&](){
-			std::cout << cterm(2, -1) << "Commands for: " << "Service" << cterm(-1, -1) << std::endl;
+            std::cout << "alioss - the simple Ali OSS manager\n";
+            std::cout << "\n";
 			std::cout 
-				<< "    list                list buckets\n"
-				<< "    enter <id>          enter some bucket\n"
-				<< "    quit                quit program\n"
-				<< "    help                display help text\n"
+                << "    bucket list\n"
+                << "\n"
+                << "    object head         <file>\n"
+                << "    object download     <file>          [file/directory]\n"
+                << "    object download     <directory>     [directory]\n"
+                << "\n"
+                << "    object upload       <file>          <file>\n"
+                << "    object upload       <directory>     <file>\n"
+                << "    object upload       <directory>     <directory>\n"
+                << "\n"
 				;
 		};
 
-		la_command_service();
+        int argc = 4;
+        const char* _argv[] = {
+            "alioss.exe",
+            "object",
+            "head",
+            "/build_env.bat"
+        };
 
-		for (;;){
+        const char** argv = _argv;
 
-			std::string cmd, arg;
-			read_command(&cmd, &arg, "service");
+        if(argc < 2) {
+            la_command_service();
+            return 0;
+        }
 
-			if (cmd[0] == '!'){
-				exec_sys_cmd(&cmd[1], arg.c_str());
-				continue;
-			}
+        argc--;
+        argv++;
 
-			const char* service_cmds[] = {
-				"list",
-				"enter",
-				"quit",
-				"help",
-				nullptr
-			};
-
-			auto find_cmd = [](const char* a[], const char* c, std::vector<int>* match)->bool{
-				bool found = false;
-				match->clear();
-				for (int i = 0; a[i]; i++){
-					if (strstr(a[i], c) == a[i]){
-						match->push_back(i);
-						if (strlen(a[i]) == strlen(c)){
-							found = true;
-							break;
-						}
-					}
-				}
-				return found;
-			};
-
-			std::vector<int> match;
-			if (find_cmd(service_cmds, cmd.c_str(), &match) || match.size()==1){
-				std::string thecmd(service_cmds[match.back()]);
-				if (thecmd == "list"){
-					svc.list_buckets();
-					svc.dump_buckets([&](int i, const meta::bucket& bkt){
-						std::cout << cterm(3, -1) << i << cterm(-1, -1) << ": " << bkt.name() << std::endl;
-						std::cout << "    Location    : " << bkt.location() << std::endl;
-						std::cout << "    CreationDate: " << bkt.creation_date() << std::endl;
-					});
-				}
-				else if (thecmd == "enter"){
-					int id = 0;
-					if (arg.size() == 0 || (id=atoi(arg.c_str())) <= 0 || id>(int)svc.buckets().size()){
-						std::cout << "enter - Invalid bucket ID!\n";
-						goto next_cmd;
-					}
-
-					auto la_command_bucket = [&](){
-						std::cout << cterm(2, -1) << "Commands for: " << "Bucket" << cterm(-1, -1) << std::endl;
-                        std::cout
-							<< "    list                list objects in current directory\n"
-							<< "    cd [dir]            change directory (no validation)\n"
-							<< "    pwd                 print current directory\n"
-							<< "    del <obj/dir>       delete file/folder\n"
-							<< "    mkdir <names>       create directory (slash separated)\n"
-							<< "    head <obj>          show object meta info\n"
-							<< "    down <obj> [dir]    download object to directory\n"
-							<< "    up <name> <obj/dir> upload file/folder\n"
-							<< "    svc                 back to service command\n"
-							<< "    quit                quit program\n"
-							<< "    help                show this help message\n"
-							;
-					};
-
-					const char* bucket_cmds[] = {
-						"list",
-						"cd",
-						"pwd",
-						"del",
-						"mkdir",
-						"head",
-						"down",
-						"up",
-						"svc",
-						"quit",
-						"help",
-						nullptr
-					};
-
-                    socket::endpoint bep;
-
-                    try {
-                        const auto& bktinfo = svc.buckets()[id - 1];
-                        socket::resolver resolver;
-                        resolver.resolve(bktinfo.location() + meta::oss_server_suffix, "http");
-                        bep.set_ep(resolver[0], 80);
-                    }
-                    catch(socket::socketexcept& e) {
-                        socketerror_stderr_dumper(e);
-                        goto next_cmd;
-                    }
-
-					meta::bucket bkt(svc.buckets()[id-1].name().c_str(), svc.buckets()[id-1].location().c_str(), "");
-					bucket::bucket bucket(key, bkt, bep);
-
-					la_command_bucket();
-
-                    dirmgr dir;
-
-					for (;;){
-						std::string cmd, arg;
-						read_command(&cmd, &arg, "bucket");
-
-						if (cmd[0] == '!'){
-							exec_sys_cmd(&cmd[1], arg.c_str());
-							continue;
-						}
-
-						std::vector<int> match;
-						if (find_cmd(bucket_cmds, cmd.c_str(), &match) || match.size() == 1){
-							std::string thecmd(bucket_cmds[match[match.size() - 1]]);
-
-							if (thecmd == "help"){
-								la_command_bucket();
-							}
-							else if (thecmd == "quit"){
-								std::cout << "quiting...\n";
-								exit(0);
-							}
-							else if (thecmd == "pwd"){
-								std::cout << dir.str() << std::endl;
-							}
-							else if (thecmd == "cd"){
-                                dir.push(arg);
-							}
-							else if (thecmd == "svc"){
-								goto next_cmd;
-							}
-							else if (thecmd == "list"){
-								bucket.list_objects(dir.str());
-
-                                auto basedir = dir.str();
-
-								std::cout << cterm(7, 2) << "Folders:" << cterm(-1, -1) << std::endl;
-								bucket.dump_folders([&](int i, const std::string& folder)->bool{
-									std::cout << "    " << folder.c_str()+ basedir.size() - 1 << std::endl;
-									return true;
-								});
-
-								std::cout << cterm(7, 2) << "Files:" << cterm(-1, -1) << std::endl;
-								bucket.dump_objects([&](int i, const meta::content& obj)->bool{
-									if (obj.key().back() == '/'){
-										// ignore current directory
-									}
-									else{
-										std::cout << "    " << obj.key().c_str() + basedir.size()-1 << std::endl;
-									}
-									return true;
-								});
-							}
-							else if (thecmd == "del"){
-								if (arg.size() == 0) {
-									goto next_bucket_cmd;
-								}
-
-								try{
-                                    object::object object(key, bkt, ep);
-                                    auto path = arg.back() != '/' ? dir.file(arg) : dir.dir(arg, true);
-									object.delete_object(path);
-								}
-								catch (ossexcept& e){
-									ossexcept_stderr_dumper(e);
-								}
-							}
-							else if (thecmd == "mkdir"){
-								if (arg.size() == 0){
-									goto next_bucket_cmd;
-								}
-
-								try{
-									object::object object(key, bkt, ep);
-                                    auto path = dir.dir(arg, true);
-									object.create_folder(path);
-								}
-								catch (ossexcept& e){
-									ossexcept_stderr_dumper(e);
-								}
-							}
-							else if (thecmd == "head"){
-								if (arg.size() == 0){
-									goto next_bucket_cmd;
-								}
-
-								try{
-									object::object object(key, bkt, ep);
-                                    auto path = dir.file(arg);
-									object.head_object(path).dump([&](size_t i, const std::string& k, const std::string& v){
-										printf("%-20s: %s\n", k.c_str(), v.c_str());
-										return true;
-									});
-								}
-								catch (ossexcept& e){
-									ossexcept_stderr_dumper(e);
-								}
-							}
-							else if (thecmd == "down"){
-                                auto obj = read_string("Object to download: ");
-                                auto save_dir = read_string("Where to save: ");
-
-                                if(obj.empty() || save_dir.empty()) {
-                                    goto next_bucket_cmd;
-                                }
-
-                                auto obj_name = [&]() {
-                                    auto off = obj.rfind('/');
-                                }
-
-
-								class file_ostream : public stream::ostream{
-								public:
-									virtual int size() const override{
-										return static_cast<int>(_fstm.width()); // ???
-									}
-									virtual int write_some(const unsigned char* buf, int sz) override{
-										_fstm.write((char*)buf, sz);
-										return sz;
-									}
-
-								public:
-									~file_ostream(){
-										close();
-									}
-
-									bool open(const char* file){
-										_fstm.open(file, std::ios_base::ate | std::ios_base::binary);
-										return _fstm.is_open();
-									}
-
-									void close() {
-										_fstm.close();
-									}
-
-								protected:
-									std::ofstream _fstm;
-								};
-
-								file_ostream fos;
-								if (!fos.open(arg.c_str())){
-									std::cout << "Cannot open file `" << arg << "' for writing\n";
-									goto next_bucket_cmd;
-								}
-
-								object::object object(key, bkt, ep);
-								try{
-                                    progress pg;
-                                    std::cout << "Downloading ... ";
-                                    pg.start();
-                                    object.get_object((cur_dir + arg).c_str(), fos, [&](const unsigned char* data, int size, int total, int transferred) {
-                                        pg.set(int(float(transferred) / total * 100));
-                                    });
-                                    pg.end();
-									std::cout << "completed.\n";
-								}
-								catch (ossexcept& e){
-									ossexcept_stderr_dumper(e);
-								}
-							}
-							else if (thecmd == "up"){
-								if (arg.size() == 0 ){
-									std::cout << "Plz correctly specify the file name you want to upload\n";
-									goto next_bucket_cmd;
-								}
-
-								class file_istream : public stream::istream{
-								public:
-									virtual int size() const override{
-										return _fsize;
-									}
-									virtual int read_some(unsigned char* buf, int sz) override{
-										_filestm.read((char*)buf, sz);
-										_fsize -= (int)_filestm.gcount();
-										return (int)_filestm.gcount();
-									}
-
-								public:
-									bool open(const char* file){
-										_filestm.open(file, std::ios_base::binary);
-										if (_filestm.is_open()){
-											_filestm.seekg(0, std::ios_base::end);
-											_fsize = (size_t)_filestm.tellg();
-											_filestm.seekg(0, std::ios_base::beg);
-										}
-										return _filestm.is_open();
-									}
-									void close(){
-										_filestm.close();
-									}
-
-									~file_istream(){
-										close();
-									}
-
-								protected:
-									size_t _fsize;
-									std::ifstream _filestm;
-								};
-
-                                std::vector<std::string> files;
-                                files.clear();
-                                os::ls_files(arg.c_str(), &files);
-                                if(files.empty()) {
-                                    std::cerr << "    Your search doesn't match anything, nothing to be done.\n";
-                                    goto next_bucket_cmd;
-                                }
-                                else if(files.size() > 1) {
-                                    std::cout << "    " << files.size() << " file(s) will be uploaded.\n";
-                                }
-
-                                int uploaded = 0;
-                                for(auto& file : files) {
-                                    auto& arg = file;
-                                    file_istream fis;
-                                    if(!fis.open(arg.c_str())) {
-                                        std::cout << "Cannot open file `" << arg << "' for reading!\n";
-                                        continue;
-                                    }
-
-                                    object::object object(key, bkt, ep);
-                                    try {
-                                        progress pg;
-                                        std::string obj = cur_dir + strutil::remove_relative_path_prefix(arg.c_str());
-                                        std::cout << "Uploading `" << arg << "' ... ";
-                                        pg.start();
-                                        object.put_object(obj.c_str(), fis, [&](const unsigned char* data, int size, int total, int transferred) {
-                                            pg.set(int(float(transferred) / total * 100));
-                                        });
-                                        pg.end();
-                                        uploaded++;
-                                        std::cout << "succeeded.\n";
-                                    } catch(ossexcept& e) {
-                                        ossexcept_stderr_dumper(e);
-                                    }
-                                }
-                                std::cout << "\n    " << files.size() << " file(s) to upload, "
-                                    << uploaded << " file(s) successfully uploaded.\n";
-							}
-						}
-						else{
-							std::cout << "Command not found: " << cterm(4, -1) << cmd << cterm(-1, -1);
-							if (match.size()) std::cout << ", did you mean: \n";
-							else std::cout << "\n";
-
-							for (auto& m : match){
-								std::cout << "\t" << bucket_cmds[m] << "\n";
-							}
-						}
-					next_bucket_cmd:;
-					}
-
-				}
-				else if (thecmd == "help"){
-					la_command_service();
-				}
-				else if (thecmd == "quit"){
-					std::cout << "quiting...\n";
-					return 0;
-				}
-			}
-			else{
-				std::cout << "Command not found: " << cterm(4, -1) << cmd << cterm(-1, -1);
-				if(match.size()) std::cout << ", did you mean: \n";
-				else std::cout << "\n";
-
-				for (auto& m : match){
-					std::cout << "\t" << service_cmds[m] << "\n";
-				}
-			}
-		next_cmd:;
-		}
-
-		cterm.restore();
+        auto object = std::string(argv[0]);
+        if(object == "bucket") {
+            if(argc == 2) {
+                auto command = std::string(argv[1]);
+                if(command == "list") {
+                    svc.list_buckets();
+                }
+            }
+        }
+        else if(object == "object") {
+            socket::endpoint ep;
+            ep.set_ep("120.77.166.164", 80);
+            bucket::bucket bkt(key, "twofei-test", "twofei-test.oss-cn-shenzhen.aliyuncs.com", ep);
+            if(argc >= 2) {
+                auto command = std::string(argv[1]);
+                if(command == "head") {
+                    auto head = bkt.head_object("/build_env.bat");
+                }
+            }
+        }
 	}
 	catch (ossexcept& e){
 		e.push_stack(__FUNCTION__);

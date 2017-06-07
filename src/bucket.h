@@ -52,12 +52,14 @@ class bucket{
 public:
 	bucket(
 		const accesskey& key,
-		const meta::bucket& bkt,
+		const std::string& name,
+		const std::string& domain,
 		const socket::endpoint& ep
 		)
 		: _key(key)
-		, _bkt(bkt)
 	{
+        _name = name;
+        _domain = domain;
 		_endpoint = ep;
 	}
 
@@ -66,13 +68,29 @@ public:
 
 	bool list_objects(const std::string& folder, bool recursive=false);
 
-	/// dump objects & dump directories
-	/// return false to interrupt iteration
-	void dump_objects(std::function<bool(int i, const meta::content& object)> dumper);
-	void dump_folders(std::function<bool(int i, const std::string& folder)> dumper);
+    bool get_object(const char* obj, stream::ostream& os, http::getter getter = nullptr,
+		const std::string& range="", const std::string& unmodified_since="");
 
-	const std::vector<meta::content>& contents() { return _contents; }
-	const std::vector<std::string>& folders() { return _common_prefixes; }
+	bool delete_object(const std::string& obj);
+
+	bool put_object(
+        const std::string& obj,
+        stream::istream& is,
+        http::putter putter = nullptr,
+        const char* content_type="",
+        const char* content_disposition="",
+        const char* content_encoding=""
+    );
+
+	bool create_folder(const std::string& name);
+
+	const http::header::head& head_object(
+		const std::string& obj,
+		const char* if_modified_since = nullptr,
+		const char* if_unmodified_since = nullptr,
+		const char* if_match = nullptr,
+		const char* if_none_match = nullptr
+    );
 
 protected:
 	meta::content& create_content(){
@@ -93,7 +111,6 @@ protected: // Request Parameters
 
 protected: // shared objects
 	const accesskey& _key;
-	const meta::bucket& _bkt;
 
 protected: // this' objects
 	std::vector<meta::content> _contents;
@@ -102,6 +119,8 @@ protected: // this' objects
 protected:
 	http::http _http;
 	socket::endpoint _endpoint;
+    std::string _name;
+    std::string _domain;
 };
 
 } // namespace bucket

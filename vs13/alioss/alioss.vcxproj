@@ -22,7 +22,6 @@
     <ClCompile Include="..\..\src\misc\dirmgr.cpp" />
     <ClCompile Include="..\..\src\misc\strutil.cpp" />
     <ClCompile Include="..\..\src\misc\time.cpp" />
-    <ClCompile Include="..\..\src\object.cpp" />
     <ClCompile Include="..\..\src\osserror.cpp" />
     <ClCompile Include="..\..\src\ossmeta.cpp" />
     <ClCompile Include="..\..\src\socket.cpp" />
@@ -45,7 +44,6 @@
     <ClInclude Include="..\..\src\misc\os.hpp" />
     <ClInclude Include="..\..\src\misc\strutil.h" />
     <ClInclude Include="..\..\src\misc\time.h" />
-    <ClInclude Include="..\..\src\object.h" />
     <ClInclude Include="..\..\src\osserror.h" />
     <ClInclude Include="..\..\src\ossmeta.h" />
     <ClInclude Include="..\..\src\socket.h" />
