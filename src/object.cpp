@@ -46,7 +46,7 @@ namespace object{
 		return _http.disconnect();
 	}
 
-	bool object::delete_object(const char* obj)
+	bool object::delete_object(const std::string& obj)
 	{
 		std::stringstream ss;
 
@@ -187,7 +187,7 @@ namespace object{
 		}
 	}
 
-	bool object::put_object(const char* obj, stream::istream& is, http::putter putter,
+	bool object::put_object(const std::string& obj, stream::istream& is, http::putter putter,
 		const char* content_type/*=""*/, const char* content_disposition/*=""*/, 
 		const char* content_encoding/*=""*/)
 	{
@@ -265,7 +265,7 @@ namespace object{
 		}
 	}
 
-	bool object::create_folder(const char* name)
+	bool object::create_folder(const std::string& name)
 	{
 		class empty_istream : public stream::istream
 		{
@@ -292,7 +292,7 @@ namespace object{
 	}
 
 	const http::header::head& object::head_object(
-		const char* obj,
+		const std::string& obj,
 		const char* if_modified_since /*= nullptr*/,
 		const char* if_unmodified_since /*= nullptr*/,
 		const char* if_match /*= nullptr*/,

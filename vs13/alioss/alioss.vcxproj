@@ -19,6 +19,7 @@
     <ClCompile Include="..\..\src\crypto\md5.c" />
     <ClCompile Include="..\..\src\crypto\sha1.c" />
     <ClCompile Include="..\..\src\misc\color_term.cpp" />
+    <ClCompile Include="..\..\src\misc\dirmgr.cpp" />
     <ClCompile Include="..\..\src\misc\strutil.cpp" />
     <ClCompile Include="..\..\src\misc\time.cpp" />
     <ClCompile Include="..\..\src\object.cpp" />
@@ -40,6 +41,7 @@
     <ClInclude Include="..\..\src\crypto\md5.h" />
     <ClInclude Include="..\..\src\crypto\sha1.h" />
     <ClInclude Include="..\..\src\misc\color_term.h" />
+    <ClInclude Include="..\..\src\misc\dirmgr.h" />
     <ClInclude Include="..\..\src\misc\os.hpp" />
     <ClInclude Include="..\..\src\misc\strutil.h" />
     <ClInclude Include="..\..\src\misc\time.h" />

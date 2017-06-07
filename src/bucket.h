@@ -64,9 +64,7 @@ public:
 	bool connect();
 	bool disconnect();
 
-	// List specified object(s)
-	// folder: must be "" or "/folder_name/folder2/"
-	bool list_objects(const char* folder="", bool recursive=false);
+	bool list_objects(const std::string& folder, bool recursive=false);
 
 	/// dump objects & dump directories
 	/// return false to interrupt iteration

@@ -84,6 +84,9 @@
     <ClCompile Include="..\..\src\misc\strutil.cpp">
       <Filter>Source Files\misc</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\misc\dirmgr.cpp">
+      <Filter>Source Files\misc</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\accesskey.h">
@@ -141,6 +144,9 @@
       <Filter>Source Files\misc</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\misc\os.hpp">
+      <Filter>Source Files\misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\misc\dirmgr.h">
       <Filter>Source Files\misc</Filter>
     </ClInclude>
   </ItemGroup>

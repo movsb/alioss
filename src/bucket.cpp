@@ -67,7 +67,7 @@ bool bucket::disconnect()
 	return _http.disconnect();
 }
 
-bool bucket::list_objects(const char* folder, bool recursive)
+bool bucket::list_objects(const std::string& folder, bool recursive)
 {
 	std::stringstream ss;
 

@@ -23,6 +23,7 @@
 #include "misc/stream.h"
 #include "misc/os.hpp"
 #include "misc/time.h"
+#include "misc/dirmgr.h"
 
 using namespace alioss;
 
@@ -64,6 +65,19 @@ next_cmd:
 
 	cterm.restore();
 	return true;
+}
+
+std::string read_string(const std::string& prompt)
+{
+retry:
+    std::string str;
+
+    std::cout << prompt;
+    std::getline(std::cin, str, '\n');
+    str = strutil::strip(str);
+    if(str.empty()) goto retry;
+
+    return str;
 }
 
 int exec_sys_cmd(const char* cmd, const char* arg="")
@@ -244,18 +258,17 @@ int main()
 					auto la_command_bucket = [&](){
 						std::cout << cterm(2, -1) << "Commands for: " << "Bucket" << cterm(-1, -1) << std::endl;
                         std::cout
-							<< "    list            list objects in current directory\n"
-							<< "    cd [dir]        change directory (no slash('/'), no recursion)\n"
-							<< "    pwd             print working directory(oss', not system)\n"
-							<< "    del <obj/dir>   delete object/folder in current directory\n"
-							   "                    ignores non-exist object\n"
-							<< "    mkdir <name>    create directory (need slash('/'))\n"
-							<< "    head <obj>      show object meta info\n"
-							<< "    down <obj>      download object to working directory<obj>\n"
-							<< "    up <obj/dir>    upload files/folder to current directory,\n"
-							<< "    svc             back to service command\n"
-							<< "    quit            quit program\n"
-							<< "    help            show this help message\n"
+							<< "    list                list objects in current directory\n"
+							<< "    cd [dir]            change directory (no validation)\n"
+							<< "    pwd                 print current directory\n"
+							<< "    del <obj/dir>       delete file/folder\n"
+							<< "    mkdir <names>       create directory (slash separated)\n"
+							<< "    head <obj>          show object meta info\n"
+							<< "    down <obj> [dir]    download object to directory\n"
+							<< "    up <name> <obj/dir> upload file/folder\n"
+							<< "    svc                 back to service command\n"
+							<< "    quit                quit program\n"
+							<< "    help                show this help message\n"
 							;
 					};
 
@@ -292,7 +305,7 @@ int main()
 
 					la_command_bucket();
 
-					std::string cur_dir("/");
+                    dirmgr dir;
 
 					for (;;){
 						std::string cmd, arg;
@@ -315,65 +328,22 @@ int main()
 								exit(0);
 							}
 							else if (thecmd == "pwd"){
-								std::cout << cur_dir << std::endl;
+								std::cout << dir.str() << std::endl;
 							}
 							else if (thecmd == "cd"){
-								if (arg.size() == 0 || arg == "/"){
-									cur_dir = "/";
-									goto next_bucket_cmd;
-								}
-
-								if (arg == "."){
-									goto next_bucket_cmd;
-								}
-								else if (arg == ".."){
-									if (cur_dir == "/"){
-										goto next_bucket_cmd;
-									}
-									else{
-										cur_dir = cur_dir.substr(0, cur_dir.rfind('/', cur_dir.size()-2)+1);
-										goto next_bucket_cmd;
-									}
-								}
-
-								auto find_dirs = [](const std::vector<std::string>& vs, const std::string& name, std::vector<int>* match)->bool{
-									bool found = false;
-									match->clear();
-									for (int i = 0; i<(int)vs.size(); i++){
-										if (vs[i].find(name) == 0){
-											match->push_back(i);
-											if (vs[i].size() == name.size()+1){
-												found = true;
-												break;
-											}
-										}
-									}
-									return found;
-								};
-
-								std::vector<int> matchdirs;
-								if (find_dirs(bucket.folders(), std::string(cur_dir.c_str()+1+arg), &matchdirs) || matchdirs.size() == 1){
-									cur_dir += bucket.folders()[matchdirs.back()].c_str() + cur_dir.size()-1;
-								}
-								else{
-									std::cout << "No such folder: " << cterm(4, -1) << arg << cterm(-1, -1);
-									if (matchdirs.size()) std::cout << ", do you mean: \n";
-									else std::cout << "\n";
-
-									for (auto& m : matchdirs){
-										std::cout << "\t" << bucket.folders()[m] << "\n";
-									}
-								}
+                                dir.push(arg);
 							}
 							else if (thecmd == "svc"){
 								goto next_cmd;
 							}
 							else if (thecmd == "list"){
-								bucket.list_objects(cur_dir.c_str());
+								bucket.list_objects(dir.str());
+
+                                auto basedir = dir.str();
 
 								std::cout << cterm(7, 2) << "Folders:" << cterm(-1, -1) << std::endl;
 								bucket.dump_folders([&](int i, const std::string& folder)->bool{
-									std::cout << "    " << folder.c_str()+cur_dir.size()-1 << std::endl;
+									std::cout << "    " << folder.c_str()+ basedir.size() - 1 << std::endl;
 									return true;
 								});
 
@@ -383,48 +353,48 @@ int main()
 										// ignore current directory
 									}
 									else{
-										std::cout << "    " << obj.key().c_str()+cur_dir.size()-1 << std::endl;
+										std::cout << "    " << obj.key().c_str() + basedir.size()-1 << std::endl;
 									}
 									return true;
 								});
 							}
 							else if (thecmd == "del"){
-								if (arg.size() == 0 || (arg.find('/')!=std::string::npos && arg.find('/') != arg.size() - 1)){
-									std::cout << "Plz specify the object name you want to delete\n";
+								if (arg.size() == 0) {
 									goto next_bucket_cmd;
 								}
 
-								object::object object(key, bkt, ep);
 								try{
-									object.delete_object((cur_dir+arg).c_str());
+                                    object::object object(key, bkt, ep);
+                                    auto path = arg.back() != '/' ? dir.file(arg) : dir.dir(arg, true);
+									object.delete_object(path);
 								}
 								catch (ossexcept& e){
 									ossexcept_stderr_dumper(e);
 								}
 							}
 							else if (thecmd == "mkdir"){
-								if (arg.size() == 0 || arg.find('/') != arg.size() - 1){
-									std::cout << "Plz correctly specify the folder name\n";
+								if (arg.size() == 0){
 									goto next_bucket_cmd;
 								}
 
 								try{
 									object::object object(key, bkt, ep);
-									object.create_folder((cur_dir+arg).c_str());
+                                    auto path = dir.dir(arg, true);
+									object.create_folder(path);
 								}
 								catch (ossexcept& e){
 									ossexcept_stderr_dumper(e);
 								}
 							}
 							else if (thecmd == "head"){
-								if (arg.size() == 0 || (arg.find('/') != std::string::npos && arg.find('/') != arg.size() - 1)){
-									std::cout << "Plz specify the object name you want to head to\n";
+								if (arg.size() == 0){
 									goto next_bucket_cmd;
 								}
 
 								try{
 									object::object object(key, bkt, ep);
-									object.head_object((cur_dir+arg).c_str()).dump([&](size_t i, const std::string& k, const std::string& v){
+                                    auto path = dir.file(arg);
+									object.head_object(path).dump([&](size_t i, const std::string& k, const std::string& v){
 										printf("%-20s: %s\n", k.c_str(), v.c_str());
 										return true;
 									});
@@ -434,10 +404,17 @@ int main()
 								}
 							}
 							else if (thecmd == "down"){
-								if (arg.size() == 0 || arg.find('/') != std::string::npos){
-									std::cout << "Plz correctly specify the object name\n";
-									goto next_bucket_cmd;
-								}
+                                auto obj = read_string("Object to download: ");
+                                auto save_dir = read_string("Where to save: ");
+
+                                if(obj.empty() || save_dir.empty()) {
+                                    goto next_bucket_cmd;
+                                }
+
+                                auto obj_name = [&]() {
+                                    auto off = obj.rfind('/');
+                                }
+
 
 								class file_ostream : public stream::ostream{
 								public:

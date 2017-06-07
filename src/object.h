@@ -69,27 +69,26 @@ public:
 	bool get_object(const char* obj, stream::ostream& os, http::getter getter = nullptr,
 		const std::string& range="", const std::string& unmodified_since="");
 
-	/// Delete an `object' from specified `bucket'
-	// If the `obj' is empty, the function works exactly
-	// like bucket::delete_bcket(), and because there are
-	// objects exist, it throws `BucketNotEmpty' exception instead.
-	bool delete_object(const char* obj);
+	bool delete_object(const std::string& obj);
 
-	bool put_object(const char* obj, stream::istream& is,
-                    http::putter putter = nullptr,
-					const char* content_type="",
-					const char* content_disposition="",
-					const char* content_encoding="");
+	bool put_object(
+        const std::string& obj,
+        stream::istream& is,
+        http::putter putter = nullptr,
+        const char* content_type="",
+        const char* content_disposition="",
+        const char* content_encoding=""
+    );
 
-	bool create_folder(const char* name);
+	bool create_folder(const std::string& name);
 
 	const http::header::head& head_object(
-		const char* obj,
+		const std::string& obj,
 		const char* if_modified_since = nullptr,
 		const char* if_unmodified_since = nullptr,
 		const char* if_match = nullptr,
 		const char* if_none_match = nullptr
-		);
+    );
 
 protected: // shared objects
 	const accesskey& _key;
