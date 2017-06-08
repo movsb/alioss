@@ -64,6 +64,27 @@ bool read_access_key(accesskey* key)
 	return true;
 }
 
+static std::string basename(const std::string& file)
+{
+    auto off = file.rfind('/');
+    if(off != file.npos) {
+        return file.substr(off + 1);
+    }
+    else {
+        return file;
+    }
+}
+
+static bool is_folder(const std::string& path)
+{
+#ifdef _WIN32
+    DWORD dwAttr = ::GetFileAttributes(path.c_str());
+    return dwAttr & FILE_ATTRIBUTE_DIRECTORY;
+#else
+    assert(0);
+#endif
+}
+
 //int main(int argc, const char* argv[])
 int main()
 {
@@ -120,7 +141,9 @@ int main()
 			std::cout 
                 << "    bucket list\n"
                 << "\n"
+                << "    object list         <directory>\n"
                 << "    object head         <file>\n"
+                << "\n"
                 << "    object download     <file>          [file/directory]\n"
                 << "    object download     <directory>     [directory]\n"
                 << "\n"
@@ -135,8 +158,8 @@ int main()
         const char* _argv[] = {
             "alioss.exe",
             "object",
-            "head",
-            "/build_env.bat"
+            "list",
+            "/e"
         };
 
         const char** argv = _argv;
@@ -164,8 +187,64 @@ int main()
             bucket::bucket bkt(key, "twofei-test", "twofei-test.oss-cn-shenzhen.aliyuncs.com", ep);
             if(argc >= 2) {
                 auto command = std::string(argv[1]);
-                if(command == "head") {
-                    auto head = bkt.head_object("/build_env.bat");
+                if(command == "list") {
+                    if(argc >= 3) {
+                        auto folder = std::string(argv[2]);
+                        bkt.list_objects(folder, true);
+                    }
+                }
+                else if(command == "head") {
+                    if(argc >= 3) {
+                        auto file = argv[2];
+                        auto head = bkt.head_object(file);
+                    }
+                }
+                else if(command == "download") {
+                    if(argc >= 3) {
+                        auto remote_path = argv[2];
+                        auto remote_name = basename(remote_path);
+                        auto local_dir = std::string(".");
+                        auto local_name = remote_name;
+
+                        if(argc >= 4) {
+                            if(is_folder(argv[3])) {
+                                local_dir = std::string(argv[3]);
+                            }
+                        }
+
+                        class file_ostream : public stream::ostream{
+                            public:
+                                virtual int size() const override{
+                                    return static_cast<int>(_fstm.width()); // ???
+                                }
+                                virtual int write_some(const unsigned char* buf, int sz) override{
+                                    _fstm.write((char*)buf, sz);
+                                    return sz;
+                                }
+
+                            public:
+                                ~file_ostream(){
+                                    close();
+                                }
+
+                                bool open(const std::string& file){
+                                    _fstm.open(file, std::ios_base::ate | std::ios_base::binary);
+                                    return _fstm.is_open();
+                                }
+
+                                void close() {
+                                    _fstm.close();
+                                }
+
+                            protected:
+                                std::ofstream _fstm;
+                        };
+
+                        file_ostream os;
+                        os.open(local_dir + "/" + local_name);
+
+                        bkt.get_object(remote_path, os);
+                    }
                 }
             }
         }

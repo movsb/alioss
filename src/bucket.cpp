@@ -69,10 +69,16 @@ bool bucket::disconnect()
 	return _http.disconnect();
 }
 
-bool bucket::list_objects(const std::string& folder_, bool recursive)
+bool bucket::list_objects(const std::string& folder, bool recursive)
 {
-    if(folder_.empty() || folder_[0] != '/') {
+    if(folder.empty() || folder[0] != '/') {
         return false;
+    }
+
+    auto prefix = folder.substr(1);
+
+    if(!prefix.empty() && prefix.back() != '/') {
+        prefix += '/';
     }
 
 	std::stringstream ss;
@@ -86,7 +92,11 @@ bool bucket::list_objects(const std::string& folder_, bool recursive)
 	//---------------------------- Requesting----------------------------------
 	// Verb
 	ss.clear(); ss.str("");
-    ss << "GET / HTTP/1.1";
+    ss << "GET /"
+        << "?prefix=" << strutil::encode_uri_component(prefix)
+        << "&delimiter=" << (recursive ? "" : "/")
+        << " HTTP/1.1"
+        ;
 	head.set_verb(std::string(ss.str()).c_str());
 
 	// Host
@@ -279,7 +289,7 @@ bool bucket::get_object(const char* obj, stream::ostream& os, http::getter gette
     ss << "GET\n";
     ss << "\n\n";
     ss << date << "\n";
-    ss << "/" << strutil::encode_uri(_name);
+    ss << "/" << (_name + obj);
     head.add_authorization(signature(_key, std::string(ss.str())).c_str());
 
     // Range & Unmodified-Since
@@ -309,8 +319,8 @@ bool bucket::get_object(const char* obj, stream::ostream& os, http::getter gette
         return true;
     }
     else if (status == "412"){
-        throw ossexcept(ossexcept::kNotSpecified, head.get_status_n_comment().c_str(), __FUNCTION__);
         disconnect();
+        throw ossexcept(ossexcept::kNotSpecified, head.get_status_n_comment().c_str(), __FUNCTION__);
     }
     else if (status == "404"){
         http::str_body_ostream bs;
@@ -319,6 +329,12 @@ bool bucket::get_object(const char* obj, stream::ostream& os, http::getter gette
 
         auto oe = new osserr((char*)bs.data(), bs.size());
         throw ossexcept(ossexcept::kNotFound, head.get_status_n_comment().c_str(), __FUNCTION__, oe);
+    }
+    else if(status == "403") {
+        http::str_body_ostream bs;
+        _http.get_body(bs);
+        auto oe = new osserr((char*)bs.data(), bs.size());
+        throw ossexcept(ossexcept::kForbidden, head.get_status_n_comment().c_str(), __FUNCTION__, oe);
     }
     else{
         disconnect();
