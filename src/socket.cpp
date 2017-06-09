@@ -6,8 +6,6 @@
 #include <iostream>
 #include <algorithm>
 
-#include "misc/color_term.h"
-
 #ifdef _WIN32
 
 #else 
@@ -144,14 +142,13 @@ namespace socket {
 
 	void socketerror_stderr_dumper(socketexcept& e)
 	{
-		color_term::color_term cterm;
-		std::cerr << "\n" << cterm(12, -1) << "---> socketexcept:\n" << cterm(-1, -1);
+		std::cerr << "\n" << "---> socketexcept:\n";
 		std::cerr << "    code: " << e.code() << std::endl;
 		std::cerr << "    what: " << e.what() << std::endl;
 
-		std::cerr << cterm(12, -1) << "---> socket stack:\n" << cterm(-1, -1);
+		std::cerr << "---> socket stack:\n";
 		e.dump_stack([&](int i, const std::string& s){
-			std::cerr << "    " << cterm(2, -1) << i << cterm(-1, -1) << ": " << s << std::endl;
+			std::cerr << "    " << i << ": " << s << std::endl;
 		});
 	}
 

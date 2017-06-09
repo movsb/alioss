@@ -2,7 +2,6 @@
 
 #include <tinyxml2/tinyxml2.h>
 
-#include "misc/color_term.h"
 #include "osserror.h"
 
 namespace alioss {
@@ -62,23 +61,19 @@ void osserr::dump(std::function<void(const std::string&)> dumper)
 
 
 void ossexcept_stderr_dumper(ossexcept& e){
-	color_term::color_term cterm;
-
 	std::cerr << "\n";
-	std::cerr << cterm(12,-1) << "-->Dumping osserr:\n" << cterm.restore();
+	std::cerr << "-->Dumping osserr:\n";
 	e.dump_osserr([](const std::string& s){
 		std::cerr << "    " << s << std::endl;
 	});
 
-	std::cerr << cterm(12, -1) << "-->ExceptionCode: \n    " << cterm.restore() << (int)e.code() << std::endl;
-	std::cerr << cterm(12, -1) << "-->ExceptionMsg : \n    " << cterm.restore() << e.what() << std::endl;
+	std::cerr << "-->ExceptionCode: \n    " << (int)e.code() << std::endl;
+	std::cerr << "-->ExceptionMsg : \n    " << e.what() << std::endl;
 
-	std::cerr << cterm(12, -1) << "-->Dumping exception stack:\n" << cterm.restore();
+	std::cerr << "-->Dumping exception stack:\n";
 	e.dump_stack([&](int i, const std::string& stk){
-		std::cerr << "    " << cterm(2,-1) << i << cterm(-1,-1) << ": " << stk << std::endl;
+		std::cerr << "    " << i << ": " << stk << std::endl;
 	});
-
-	std::cerr << cterm.restore();
 }
 
 

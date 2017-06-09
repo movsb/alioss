@@ -17,7 +17,6 @@
 #include "service.h"
 #include "bucket.h"
 #include "ossmeta.h"
-#include "misc/color_term.h"
 #include "misc/strutil.h"
 #include "misc/stream.h"
 #include "misc/os.hpp"
@@ -105,7 +104,6 @@ int main()
 #ifdef _WIN32
 		wsa.init();
 #endif
-		std::cout << "resolving oss.aliyuncs.com ...";
 		resolver.resolve("oss.aliyuncs.com", "http");
 	}
 	catch (socket::socketexcept& e){
@@ -126,14 +124,9 @@ int main()
 	ep.set_ep(resolver[0], 80);
 
 	try {
-		color_term::color_term cterm;
 		std::string str;
 
-		std::cout << "Logging ... ";
-
 		service::service svc(key, ep);
-		svc.verify_user();
-		std::cout << cterm(2,-1) << "Success!" << cterm(-1,-1) << std::endl;
 
 		auto la_command_service = [&](){
             std::cout << "alioss - the simple Ali OSS manager\n";
@@ -177,7 +170,8 @@ int main()
             if(argc == 2) {
                 auto command = std::string(argv[1]);
                 if(command == "list") {
-                    svc.list_buckets();
+                    std::vector<meta::bucket> buckets;
+                    svc.list_buckets(&buckets);
                 }
             }
         }
@@ -212,35 +206,7 @@ int main()
                             }
                         }
 
-                        class file_ostream : public stream::ostream{
-                            public:
-                                virtual int size() const override{
-                                    return static_cast<int>(_fstm.width()); // ???
-                                }
-                                virtual int write_some(const unsigned char* buf, int sz) override{
-                                    _fstm.write((char*)buf, sz);
-                                    return sz;
-                                }
-
-                            public:
-                                ~file_ostream(){
-                                    close();
-                                }
-
-                                bool open(const std::string& file){
-                                    _fstm.open(file, std::ios_base::ate | std::ios_base::binary);
-                                    return _fstm.is_open();
-                                }
-
-                                void close() {
-                                    _fstm.close();
-                                }
-
-                            protected:
-                                std::ofstream _fstm;
-                        };
-
-                        file_ostream os;
+                        stream::file_ostream os;
                         os.open(local_dir + "/" + local_name);
 
                         bkt.get_object(remote_path, os);

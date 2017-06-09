@@ -29,27 +29,10 @@ public:
     bool connect();
     bool disconnect();
 	
-	// Verify user key
-	// Returns:
-	//	1. InvalidAccessKeyID - ID not exists
-	//  2. Forbidden - ID exists, but secret wrong
-	bool verify_user();
-
-	bool list_buckets();
-
-	const std::vector<meta::bucket>& buckets() { return _buckets; }
-	void dump_buckets(std::function<void(int i, const meta::bucket& bkt)> dumper);
-
-private:
-	// avoid copy-ctor on vector::push_back()
-	meta::bucket& bucket_create() {
-		_buckets.push_back(meta::bucket());
-		return _buckets[_buckets.size() - 1];
-	}
+	void list_buckets(std::vector<meta::bucket>* buckets);
 
 protected:
 	meta::owner _owner;
-	std::vector<meta::bucket> _buckets;
 
 protected:
 	const accesskey&	_key;

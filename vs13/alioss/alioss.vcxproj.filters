@@ -75,13 +75,7 @@
     <ClCompile Include="..\..\src\osserror.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\misc\color_term.cpp">
-      <Filter>Source Files\misc</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\misc\strutil.cpp">
-      <Filter>Source Files\misc</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\misc\dirmgr.cpp">
       <Filter>Source Files\misc</Filter>
     </ClCompile>
   </ItemGroup>
@@ -131,16 +125,10 @@
     <ClInclude Include="..\..\src\osserror.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\misc\color_term.h">
-      <Filter>Source Files\misc</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\misc\strutil.h">
       <Filter>Source Files\misc</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\misc\os.hpp">
-      <Filter>Source Files\misc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\misc\dirmgr.h">
       <Filter>Source Files\misc</Filter>
     </ClInclude>
   </ItemGroup>

@@ -11,6 +11,9 @@ Desc	: I'm not familiar with writing a class template,
 #ifndef __alioss_misc_stream_h__
 #define __alioss_misc_stream_h__
 
+#include <string>
+#include <fstream>
+
 namespace alioss{
 
 namespace stream{
@@ -29,6 +32,34 @@ namespace stream{
 	public:
 		virtual int write_some(const unsigned char* buf, int sz) = 0;
 	};
+
+    class file_ostream : public stream::ostream {
+    public:
+        virtual int size() const override{
+            return static_cast<int>(_fstm.width()); // ???
+        }
+        virtual int write_some(const unsigned char* buf, int sz) override{
+            _fstm.write((char*)buf, sz);
+            return sz;
+        }
+
+    public:
+        ~file_ostream(){
+            close();
+        }
+
+        bool open(const std::string& file){
+            _fstm.open(file, std::ios_base::ate | std::ios_base::binary);
+            return _fstm.is_open();
+        }
+
+        void close() {
+            _fstm.close();
+        }
+
+    protected:
+        std::ofstream _fstm;
+};
 
 } // namespace stream
 

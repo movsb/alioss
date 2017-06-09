@@ -24,7 +24,7 @@ bool service::disconnect() {
     return _http.disconnect();
 }
 
-bool service::list_buckets()
+void service::list_buckets(std::vector<meta::bucket>* buckets)
 {
 	using namespace strutil;
 
@@ -63,8 +63,6 @@ bool service::list_buckets()
 
     disconnect();
 
-	_buckets.clear();
-
 	auto& status = head.get_status();
 	if (status == "200") {
 		tinyxml2::XMLDocument xmldoc;
@@ -84,38 +82,17 @@ bool service::list_buckets()
 				node = node->NextSiblingElement("Bucket"))
 			{
 				tinyxml2::XMLHandle handle_bucket(node);
-				auto& newbkt = bucket_create();
+                (*buckets).push_back(meta::bucket());
+                auto& newbkt = buckets->back();
 				newbkt.set_name(handle_bucket.FirstChildElement("Name").FirstChild().ToText()->Value());
 				newbkt.set_location(handle_bucket.FirstChildElement("Location").FirstChild().ToText()->Value());
 				newbkt.set_creation_date(handle_bucket.FirstChildElement("CreationDate").FirstChild().ToText()->Value());
 			}
 		}
-
-		return true;
 	}
 	else{
 		auto oe = new osserr(bs.data(), bs.size());
 		throw ossexcept(ossexcept::kNotSpecified, head.get_status_n_comment().c_str(), __FUNCTION__, oe);
-	}
-}
-
-void service::dump_buckets(std::function<void(int i, const meta::bucket& bkt)> dumper)
-{
-	int i = 0;
-	for (auto& b : _buckets){
-		dumper(++i, b);
-	}
-}
-
-bool service::verify_user()
-{
-	try{
-		list_buckets();
-		return true;
-	}
-	catch (ossexcept& e){
-		e.push_stack(__FUNCTION__);
-		throw;
 	}
 }
 
