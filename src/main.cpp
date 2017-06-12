@@ -100,7 +100,6 @@ int main()
 	socket::resolver resolver;
 
 	try{
-		std::cout << "socket_init ..." << std::endl;
 #ifdef _WIN32
 		wsa.init();
 #endif

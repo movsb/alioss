@@ -5,9 +5,9 @@
 
 #include "misc/strutil.h"
 #include "misc/time.h"
-#include "signature.h"
-#include "socket.h"
 #include "misc/stream.h"
+#include "sign.h"
+#include "socket.h"
 #include "service.h"
 #include "osserror.h"
 #include "ossmeta.h"
@@ -46,9 +46,7 @@ void service::list_buckets(std::vector<meta::bucket>* buckets)
 	head.add_date(date);
 
 	// Authorization
-	std::string sigstr("GET\n\n\n");
-	sigstr += date + "\n/";
-	head.add_authorization(signature(_key, sigstr));
+    head.add_authorization(sign(_key, "GET", "", "", date, "/"));
 
 	// Connection
 	head.add_connection("close");

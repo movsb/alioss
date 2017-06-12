@@ -11,8 +11,8 @@ Author	: twofei <anhbk@qq.com>
 #include <vector>
 
 #include "socket.h"
-#include "accesskey.h"
 #include "ossmeta.h"
+#include "sign.h"
 
 namespace alioss {
 

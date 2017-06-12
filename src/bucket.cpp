@@ -10,7 +10,7 @@
 #include "misc/stream.h"
 #include "misc/strutil.h"
 
-#include "signature.h"
+#include "sign.h"
 #include "socket.h"
 #include "ossmeta.h"
 #include "osserror.h"
@@ -19,45 +19,6 @@
 namespace alioss{
 
 namespace bucket{
-
-namespace bucket_error{
-
-	void invalid_location_constraint::node_handler(void* n)
-	{
-		auto node = reinterpret_cast<tinyxml2::XMLElement*>(n);
-		if (strcmp(node->Value(), "LocationConstraint") == 0){
-			_location = node->FirstChild()->ToText()->Value();
-		}
-	}
-
-	void invalid_location_constraint::dump(std::function<void(const std::string&)> dumper)
-	{
-		osserr::dump(dumper);
-
-		dumper(std::string("LocationConstraint: ") + _location);
-	}
-
-	void invalid_bucket_name::node_handler(void* n)
-	{
-		auto node = reinterpret_cast<tinyxml2::XMLElement*>(n);
-		if (strcmp(node->Value(), "BucketName") == 0){
-            auto first = node->FirstChild();
-            if(first && first->ToText())
-                _bucket_name = first->ToText()->Value();
-            else
-                _bucket_name = "";
-		}
-	}
-
-	void invalid_bucket_name::dump(std::function<void(const std::string&)> dumper)
-	{
-		osserr::dump(dumper);
-
-		dumper(std::string("BucketName: ") + _bucket_name);
-	}
-
-
-}
 
 bool bucket::connect()
 {
@@ -107,12 +68,7 @@ bool bucket::list_objects(const std::string& folder, bool recursive)
 	head.add_date(date.c_str());
 
 	// Authorization
-	ss.clear(); ss.str("");
-	ss << "GET\n";
-	ss << "\n\n";
-	ss << date << "\n";
-    ss << "/" << _name << "/";
-	head.add_authorization(signature(_key, std::string(ss.str())).c_str());
+	head.add_authorization(sign(_key, "GET", "", "", date, '/' + _name + '/'));
 
 	// Connection
 	head.add_connection("close");
@@ -186,8 +142,7 @@ bool bucket::list_objects(const std::string& folder, bool recursive)
 	if (doc.Parse((char*)bs.data(), bs.size()) == tinyxml2::XMLError::XML_SUCCESS){
 		std::string ec(doc.FirstChildElement("Error")->FirstChildElement("Code")->FirstChild()->ToText()->Value());
 		if (ec == "NoSuchBucket" || ec == "AccessDenied" || ec == "InvalidArgument"){
-			auto oe = new bucket_error::invalid_location_constraint(&doc);
-			throw ossexcept(ossexcept::kNotSpecified, head.get_status_n_comment().c_str(), __FUNCTION__, oe);
+			throw ossexcept(ossexcept::kNotSpecified, head.get_status_n_comment().c_str(), __FUNCTION__, NULL);
 		}
 		throw ossexcept(ossexcept::kUnhandled, "fatal: unhandled exception!", __FUNCTION__);
 	}
@@ -219,12 +174,7 @@ bool bucket::delete_object(const std::string& obj)
     head.add_date(date.c_str());
 
     // Authorization
-    ss.clear(); ss.str("");
-    ss << "DELETE\n";
-    ss << "\n\n";
-    ss << date << "\n";
-    ss << "/" << strutil::encode_uri(_name);
-    head.add_authorization(signature(_key, std::string(ss.str())).c_str());
+    head.add_authorization(sign(_key, "DELETE", "", "", date, '/' + _name + obj));
 
     // Connection
     head.add_connection("close");
@@ -285,12 +235,7 @@ bool bucket::get_object(const char* obj, stream::ostream& os, http::getter gette
     head.add_date(date.c_str());
 
     // Authorization
-    ss.clear(); ss.str("");
-    ss << "GET\n";
-    ss << "\n\n";
-    ss << date << "\n";
-    ss << "/" << (_name + obj);
-    head.add_authorization(signature(_key, std::string(ss.str())).c_str());
+    head.add_authorization(sign(_key, "GET", "", "", date, '/' + _name + obj));
 
     // Range & Unmodified-Since
     if (range.size()){
@@ -374,13 +319,7 @@ bool bucket::put_object(const std::string& obj, stream::istream& is, http::putte
     head.add_date(date.c_str());
 
     // Authorization
-    ss.clear(); ss.str("");
-    ss << "PUT\n";
-    ss << "\n";
-    ss << content_type << "\n";
-    ss << date << "\n";
-    ss << "/" << strutil::encode_uri(_name + obj);
-    head.add_authorization(signature(_key, std::string(ss.str())).c_str());
+    head.add_authorization(sign(_key, "PUT", "", "", date, '/' + _name + obj));
 
     // Connection
     head.add_connection("close");
@@ -469,12 +408,7 @@ const http::header::head& bucket::head_object(
     head.add_date(date);
 
     // Authorization
-    ss.clear(); ss.str("");
-    ss << "HEAD\n";
-    ss << "\n\n";
-    ss << date << "\n";
-    ss << "/" << strutil::encode_uri(_name + obj);
-    head.add_authorization(signature(_key, std::string(ss.str())));
+    head.add_authorization(sign(_key, "HEAD", "", "", date, '/' + _name + obj));
 
     // Connection
     head.add_connection("close");

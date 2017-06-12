@@ -1,10 +1,12 @@
+#include <string>
+#include <sstream>
 
 #include "crypto/crypto.h"
-#include "signature.h"
+#include "sign.h"
 
 namespace alioss{
 
-std::string signature(const accesskey& keysec, const std::string& msg)
+std::string sign(const accesskey& keysec, const std::string& msg)
 {
 	using namespace crypto;
 
@@ -19,6 +21,21 @@ std::string signature(const accesskey& keysec, const std::string& msg)
 	sig += b64str;
 
 	return sig;
+}
+
+
+std::string sign(const accesskey& keysec, const std::string& verb, const std::string& content_md5, const std::string& content_type, const std::string& date, const std::string& resource)
+{
+    std::ostringstream iss;
+    
+    iss << verb << '\n'
+        << content_md5 << '\n'
+        << content_type << '\n'
+        << date << '\n'
+        << resource
+        ;
+
+    return sign(keysec, iss.str());
 }
 
 std::string content_md5(const void* data, int size)
