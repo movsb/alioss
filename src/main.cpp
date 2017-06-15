@@ -21,7 +21,6 @@
 #include "misc/stream.h"
 #include "misc/os.hpp"
 #include "misc/time.h"
-#include "misc/dirmgr.h"
 
 using namespace alioss;
 

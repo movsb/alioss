@@ -52,13 +52,12 @@ bool bucket::list_objects(const std::string& folder, bool recursive)
 
 	//---------------------------- Requesting----------------------------------
 	// Verb
-	ss.clear(); ss.str("");
-    ss << "GET /"
-        << "?prefix=" << strutil::encode_uri_component(prefix)
-        << "&delimiter=" << (recursive ? "" : "/")
-        << " HTTP/1.1"
-        ;
-	head.set_verb(std::string(ss.str()).c_str());
+    head.set_request("GET", "/", 
+        {
+            {"prefix", prefix},
+            {"delimiter", recursive ? "" : "/"},
+        }
+    );
 
 	// Host
 	head.add_host(_domain);
@@ -162,9 +161,7 @@ bool bucket::delete_object(const std::string& obj)
 
     //---------------------------- Requesting----------------------------------
     // Verb
-    ss.clear(); ss.str("");
-    ss << "DELETE " << strutil::encode_uri(obj) << " HTTP/1.1";
-    head.set_verb(std::string(ss.str()).c_str());
+    head.set_request("DELETE", obj);
 
     // Host
     head.add_host(_domain);
@@ -223,9 +220,7 @@ bool bucket::get_object(const char* obj, stream::ostream& os, http::getter gette
     head.clear();
 
     // Verb
-    ss.clear(); ss.str("");
-    ss << "GET " << strutil::encode_uri(obj) << " HTTP/1.1";
-    head.set_verb(std::string(ss.str()).c_str());
+    head.set_request("GET", obj);
 
     // Host
     head.add_host(_domain);
@@ -298,9 +293,7 @@ bool bucket::put_object(const std::string& obj, stream::istream& is, http::putte
     head.clear();
 
     // Verb
-    ss.clear(); ss.str("");
-    ss << "PUT " << strutil::encode_uri(obj) << " HTTP/1.1";
-    head.set_verb(std::string(ss.str()).c_str());
+    head.set_request("PUT", obj);
 
     // Content-Length & Content-Type && Content-Disposition && Content-Encoding
     head.add_content_length(is.size());
@@ -396,9 +389,7 @@ const http::header::head& bucket::head_object(
     head.clear();
 
     // Verb
-    ss.clear(); ss.str("");
-    ss << "HEAD " << strutil::encode_uri(obj) << " HTTP/1.1";
-    head.set_verb(std::string(ss.str()));
+    head.set_request("HEAD", obj);
 
     // Host
     head.add_host(_domain);

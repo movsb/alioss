@@ -34,9 +34,7 @@ void service::list_buckets(std::vector<meta::bucket>* buckets)
 	std::stringstream ss;
 
 	// Verb
-	clear(ss);
-	ss << "GET / HTTP/1.1";
-	head.set_verb(std::string(ss.str()));
+    head.set_request("GET", "/");
 
 	// Host
 	head.add_host(meta::oss_root_server);

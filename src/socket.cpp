@@ -14,6 +14,8 @@
 
 #endif
 
+#include "misc/strutil.h"
+
 #include "socket.h"
 
 #undef min
@@ -301,6 +303,34 @@ bool http::get_body(stream::ostream& os, getter cb)
 	return true;
 }
 
+
+void header::head::set_request(const std::string & method, const std::string & resource, const std::map<std::string, std::string>& query, const std::string & version)
+{
+    std::ostringstream oss;
+
+    oss << method << ' ';
+
+    oss << strutil::encode_uri(resource);
+
+    if(!query.empty()) {
+        std::string qs;
+
+        for(const auto& kv : query) {
+            auto ek = strutil::encode_uri_component(kv.first);
+            auto ev = strutil::encode_uri_component(kv.second);
+            qs += '&' + ek + '=' + ev;
+        }
+
+        qs[0] = '?';
+
+        oss << qs;
+    }
+
+    oss << ' ';
+    oss << version;
+
+    _verb = oss.str();
+}
 
 void header::head::dump(std::function<bool(
 	std::vector<item>::size_type i,

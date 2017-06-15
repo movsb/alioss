@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <functional>
+#include <map>
 
 #ifdef _WIN32
 
@@ -278,15 +279,16 @@ public:
 		return _items[i];
 	}
 
-	template<class T>
-	bool set_verb(const T& verb){
-		_verb = verb;
-		return true;
-	}
-
 	const std::string& get_verb() const {
 		return _verb;
 	}
+
+    void set_request(
+        const std::string& method,
+        const std::string& resource,
+        const std::map<std::string, std::string>& query = {},
+        const std::string& version = "HTTP/1.1"
+    );
 
 	bool set_status(const char* st){
 		auto p = st;
