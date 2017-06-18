@@ -11,23 +11,14 @@ Desc	: String manipulation
 #include <string>
 #include <vector>
 #include <unordered_set>
-#include <sstream>
 #include <codecvt>
 #include <memory>
 
 namespace alioss{
 namespace strutil{
+
 std::string strip(const std::string& s);
 std::string strip(const char* s, int len=-1);
-const char* normalize_slash(char* path);
-const char* remove_relative_path_prefix(const char* path);
-std::string dirname(const std::string& path);
-
-inline void clear(std::stringstream& ss) {
-    ss.clear();
-    ss.str("");
-
-}
 
 typedef std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> U8U16Cvt;
 

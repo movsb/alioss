@@ -42,8 +42,6 @@ bool bucket::list_objects(const std::string& folder, bool recursive)
         prefix += '/';
     }
 
-	std::stringstream ss;
-
 	auto& head = _http.head();
 	head.clear();
 
@@ -154,8 +152,6 @@ bool bucket::list_objects(const std::string& folder, bool recursive)
 
 bool bucket::delete_object(const std::string& obj)
 {
-    std::stringstream ss;
-
     auto& head = _http.head();
     head.clear();
 
@@ -214,8 +210,6 @@ bool bucket::delete_object(const std::string& obj)
 bool bucket::get_object(const char* obj, stream::ostream& os, http::getter getter, const std::string& range/*=""*/, const std::string& unmodified_since/*=""*/)
 {
     //---------------------------- Requesting----------------------------------
-    std::stringstream ss;
-
     auto& head = _http.head();
     head.clear();
 
@@ -234,10 +228,7 @@ bool bucket::get_object(const char* obj, stream::ostream& os, http::getter gette
 
     // Range & Unmodified-Since
     if (range.size()){
-        ss.clear(); ss.str("");
-        ss << "bytes=" << range;
-        head.add("Range", std::string(ss.str()).c_str());
-
+        head.add("Range", "bytes=" + range);
         head.add("If-Unmodified-Since", unmodified_since.c_str());
     }
 
@@ -287,8 +278,6 @@ bool bucket::put_object(const std::string& obj, stream::istream& is, http::putte
     const char* content_encoding/*=""*/)
 {
     //---------------------------- Requesting----------------------------------
-    std::stringstream ss;
-
     auto& head = _http.head();
     head.clear();
 
@@ -383,8 +372,6 @@ const http::header::head& bucket::head_object(
     const char* if_match /*= nullptr*/,
     const char* if_none_match /*= nullptr */)
 {
-    std::stringstream ss;
-
     auto& head = _http.head();
     head.clear();
 

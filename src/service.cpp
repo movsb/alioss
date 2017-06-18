@@ -31,8 +31,6 @@ void service::list_buckets(std::vector<meta::bucket>* buckets)
 	auto& head = _http.head();
 	head.clear();
 
-	std::stringstream ss;
-
 	// Verb
     head.set_request("GET", "/");
 

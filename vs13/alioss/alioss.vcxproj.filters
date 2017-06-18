@@ -75,6 +75,9 @@
     <ClCompile Include="..\..\src\sign.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\misc\file_system.cpp">
+      <Filter>Source Files\misc</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\service.h">
@@ -119,11 +122,11 @@
     <ClInclude Include="..\..\src\misc\strutil.h">
       <Filter>Source Files\misc</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\misc\os.hpp">
-      <Filter>Source Files\misc</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\sign.h">
       <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\misc\file_system.h">
+      <Filter>Source Files\misc</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -17,6 +17,7 @@
     <ClCompile Include="..\..\src\crypto\hmac_sha1.c" />
     <ClCompile Include="..\..\src\crypto\md5.c" />
     <ClCompile Include="..\..\src\crypto\sha1.c" />
+    <ClCompile Include="..\..\src\misc\file_system.cpp" />
     <ClCompile Include="..\..\src\misc\strutil.cpp" />
     <ClCompile Include="..\..\src\misc\time.cpp" />
     <ClCompile Include="..\..\src\osserror.cpp" />
@@ -35,7 +36,7 @@
     <ClInclude Include="..\..\src\crypto\hmac_sha1.h" />
     <ClInclude Include="..\..\src\crypto\md5.h" />
     <ClInclude Include="..\..\src\crypto\sha1.h" />
-    <ClInclude Include="..\..\src\misc\os.hpp" />
+    <ClInclude Include="..\..\src\misc\file_system.h" />
     <ClInclude Include="..\..\src\misc\strutil.h" />
     <ClInclude Include="..\..\src\misc\time.h" />
     <ClInclude Include="..\..\src\osserror.h" />
@@ -55,13 +56,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v120_xp</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v120_xp</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>

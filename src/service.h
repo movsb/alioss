@@ -7,7 +7,6 @@ Author	: twofei <anhbk@qq.com>
 #include <stdint.h>
 
 #include <string>
-#include <sstream>
 #include <vector>
 
 #include "socket.h"

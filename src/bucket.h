@@ -5,7 +5,6 @@ Author	: twofei <anhbk@qq.com>
 -----------------------------------------------*/
 
 #include <string>
-#include <sstream>
 #include <vector>
 #include <functional>
 

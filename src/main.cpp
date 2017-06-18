@@ -3,7 +3,6 @@
 #include <cstdio>
 #include <csignal>
 #include <iostream>
-#include <sstream>
 #include <fstream>
 #include <functional>
 #include <regex>
@@ -19,7 +18,7 @@
 #include "ossmeta.h"
 #include "misc/strutil.h"
 #include "misc/stream.h"
-#include "misc/os.hpp"
+#include "misc/file_system.h"
 #include "misc/time.h"
 
 using namespace alioss;
@@ -60,27 +59,6 @@ bool read_access_key(accesskey* key)
 
 	key->set_key(keyid.c_str(), keysec.c_str());
 	return true;
-}
-
-static std::string basename(const std::string& file)
-{
-    auto off = file.rfind('/');
-    if(off != file.npos) {
-        return file.substr(off + 1);
-    }
-    else {
-        return file;
-    }
-}
-
-static bool is_folder(const std::string& path)
-{
-#ifdef _WIN32
-    DWORD dwAttr = ::GetFileAttributes(path.c_str());
-    return dwAttr & FILE_ATTRIBUTE_DIRECTORY;
-#else
-    assert(0);
-#endif
 }
 
 //int main(int argc, const char* argv[])
@@ -194,12 +172,12 @@ int main()
                 else if(command == "download") {
                     if(argc >= 3) {
                         auto remote_path = argv[2];
-                        auto remote_name = basename(remote_path);
+                        auto remote_name = file_system::basename(remote_path);
                         auto local_dir = std::string(".");
                         auto local_name = remote_name;
 
                         if(argc >= 4) {
-                            if(is_folder(argv[3])) {
+                            if(file_system::is_folder(argv[3])) {
                                 local_dir = std::string(argv[3]);
                             }
                         }
