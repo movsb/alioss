@@ -126,9 +126,9 @@ int main()
         int argc = 4;
         const char* _argv[] = {
             "alioss.exe",
-            "object",
+            "bucket",
             "list",
-            "/e"
+            "/e/"
         };
 
         const char** argv = _argv;
@@ -143,11 +143,21 @@ int main()
 
         auto object = std::string(argv[0]);
         if(object == "bucket") {
-            if(argc == 2) {
+            if(argc >= 2) {
                 auto command = std::string(argv[1]);
                 if(command == "list") {
                     std::vector<meta::bucket> buckets;
                     svc.list_buckets(&buckets);
+                    for (const auto& bkt : buckets) {
+                        std::cout
+                            << "Name          : " << bkt.name() << std::endl
+                            << "Location      : " << bkt.location() << std::endl
+                            << "Creation Date : " << bkt.creation_date() << std::endl
+                            << "End Point     : " << (bkt.location() + ".aliyuncs.com") << std::endl
+                            << "Public Host   : " << (bkt.name() + "." + bkt.location() + ".aliyuncs.com") << std::endl
+                            << std::endl
+                        ;
+                    }
                 }
             }
         }
@@ -167,6 +177,10 @@ int main()
                     if(argc >= 3) {
                         auto file = argv[2];
                         auto head = bkt.head_object(file);
+                        head.dump([](size_t i, const std::string& key, const std::string& val){
+                            std::printf("%-25s: %s\n", key.c_str(), val.c_str());
+                            return true;
+                        });
                     }
                 }
                 else if(command == "download") {
