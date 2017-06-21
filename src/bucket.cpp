@@ -30,10 +30,10 @@ bool bucket::disconnect()
 	return _http.disconnect();
 }
 
-bool bucket::list_objects(const std::string& folder, bool recursive)
+void bucket::list_objects(const std::string& folder, bool recursive, std::vector<meta::content>* objects, std::vector<std::string>* folders)
 {
     if(folder.empty() || folder[0] != '/') {
-        return false;
+        throw ossexcept(ossexcept::kInvalidPath);
     }
 
     auto prefix = folder.substr(1);
@@ -44,9 +44,6 @@ bool bucket::list_objects(const std::string& folder, bool recursive)
 
 	auto& head = _http.head();
 	head.clear();
-
-	_contents.clear();
-	_common_prefixes.clear();
 
 	//---------------------------- Requesting----------------------------------
 	// Verb
@@ -104,21 +101,43 @@ bool bucket::list_objects(const std::string& folder, bool recursive)
 				return node->FirstChild()->ToText()->Value();
 			};
 
+            auto& objs = *objects;
+            auto& dirs = *folders;
+
+            objs.clear();
+            dirs.clear();
+
+            auto la_is_folder = [](const char* key) {
+                return key != nullptr
+                    && *key != '\0'
+                    && key[std::strlen(key) - 1] == '/'
+                    ;
+            };
+
 			for (auto onec = List_bucket_result->FirstChildElement("Contents");
 				onec != nullptr;
 				onec = onec->NextSiblingElement("Contents"))
 			{
-				auto& cont = create_content();
-				cont.set_key(la_get_value(onec, "Key"));
-				cont.set_last_modified(la_get_value(onec, "LastModified"));
-				cont.set_e_tag(la_get_value(onec, "ETag"));
-				cont.set_type(la_get_value(onec, "Type"));
-				cont.set_size(la_get_value(onec, "Size"));
-				cont.set_storage_class(la_get_value(onec, "StorageClass"));
-				cont.set_owner( // so long?
-					onec->FirstChildElement("Owner")->FirstChild()->FirstChild()->ToText()->Value(),
-					onec->FirstChildElement("Owner")->FirstChild()->NextSibling()->FirstChild()->ToText()->Value()
-					);
+                auto key = la_get_value(onec, "Key");
+                if (!la_is_folder(key)) {
+                    meta::content file;
+
+                    file.set_key(la_get_value(onec, "Key"));
+                    file.set_last_modified(la_get_value(onec, "LastModified"));
+                    file.set_e_tag(la_get_value(onec, "ETag"));
+                    file.set_type(la_get_value(onec, "Type"));
+                    file.set_size(la_get_value(onec, "Size"));
+                    file.set_storage_class(la_get_value(onec, "StorageClass"));
+                    file.set_owner( // so long?
+                        onec->FirstChildElement("Owner")->FirstChild()->FirstChild()->ToText()->Value(),
+                        onec->FirstChildElement("Owner")->FirstChild()->NextSibling()->FirstChild()->ToText()->Value()
+                        );
+
+                    objs.push_back(std::move(file));
+                }
+                else {
+                    dirs.push_back(key);
+                }
 			}
 
 			// Travels all directories. Its xml style is hard to understand.
@@ -126,13 +145,15 @@ bool bucket::list_objects(const std::string& folder, bool recursive)
 				oned != nullptr;
 				oned = oned->NextSiblingElement("CommonPrefixes"))
 			{
-				auto& dir = create_common_prefix();
-				dir = oned->FirstChild()->FirstChild()->ToText()->Value();
+				auto dir = oned->FirstChild()->FirstChild()->ToText()->Value();
+                dirs.push_back(dir);
 			}
+
+            return;
 		}
-		else
+        else {
 			throw ossexcept(ossexcept::kXmlError, "fatal: xml not well-formed", __FUNCTION__);
-		return true;
+        }
 	}
 
 	tinyxml2::XMLDocument doc;
@@ -146,8 +167,6 @@ bool bucket::list_objects(const std::string& folder, bool recursive)
 	else{
 		throw ossexcept(ossexcept::kXmlError,"fatal: xml not well-formed", __FUNCTION__);
 	}
-
-	return true;
 }
 
 bool bucket::delete_object(const std::string& obj)

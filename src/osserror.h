@@ -57,9 +57,10 @@ public:
 	static const ecode kInvalidArgs = ecode(-3);
 	static const ecode kInvalidCheckSum = ecode(-4);
 	static const ecode kTooMany = ecode(-5);
+    static const ecode kInvalidPath = ecode(-6);
 	static const ecode kXmlError = ecode(1);
 
-	ossexcept(ecode errcode, const char* errmsg, const char* errfunc=nullptr, osserr* oe=nullptr)
+	ossexcept(ecode errcode, const char* errmsg = "", const char* errfunc=nullptr, osserr* oe=nullptr)
 		: _code(errcode), _what(errmsg)
 		, _osserr(oe)
 	{

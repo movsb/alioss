@@ -34,7 +34,7 @@ public:
 	bool connect();
 	bool disconnect();
 
-	bool list_objects(const std::string& folder, bool recursive=false);
+	void list_objects(const std::string& folder, bool recursive, std::vector<meta::content>* objects, std::vector<std::string>* folders);
 
     bool get_object(const char* obj, stream::ostream& os, http::getter getter = nullptr,
 		const std::string& range="", const std::string& unmodified_since="");
@@ -60,17 +60,6 @@ public:
 		const char* if_none_match = nullptr
     );
 
-protected:
-	meta::content& create_content(){
-		_contents.push_back(meta::content());
-		return _contents[_contents.size() - 1];
-	}
-
-	std::string& create_common_prefix(){
-		_common_prefixes.push_back(std::string());
-		return _common_prefixes[_common_prefixes.size() - 1];
-	}
-
 protected: // Request Parameters
 	std::string _delimiter;
 	std::string _marker;
@@ -79,10 +68,6 @@ protected: // Request Parameters
 
 protected: // shared objects
 	const accesskey& _key;
-
-protected: // this' objects
-	std::vector<meta::content> _contents;
-	std::vector<std::string>   _common_prefixes;
 
 protected:
 	http::http _http;

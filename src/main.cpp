@@ -126,7 +126,7 @@ int main()
         int argc = 4;
         const char* _argv[] = {
             "alioss.exe",
-            "bucket",
+            "object",
             "list",
             "/e/"
         };
@@ -170,7 +170,9 @@ int main()
                 if(command == "list") {
                     if(argc >= 3) {
                         auto folder = std::string(argv[2]);
-                        bkt.list_objects(folder, true);
+                        std::vector<meta::content> files;
+                        std::vector<std::string> folders;
+                        bkt.list_objects(folder, true, &files, &folders);
                     }
                 }
                 else if(command == "head") {
