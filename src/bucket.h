@@ -34,7 +34,9 @@ public:
 	bool connect();
 	bool disconnect();
 
+	void list_objects(const std::string& prefix, std::vector<meta::content>* objects);
 	void list_objects(const std::string& folder, bool recursive, std::vector<meta::content>* objects, std::vector<std::string>* folders);
+	void _list_objects_internal(const std::string& prefix, bool recursive, std::vector<meta::content>* objects, std::vector<std::string>* folders);
 
     bool get_object(const char* obj, stream::ostream& os, http::getter getter = nullptr,
 		const std::string& range="", const std::string& unmodified_since="");

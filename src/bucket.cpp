@@ -39,7 +39,7 @@ void bucket::list_objects(const std::string& folder, bool recursive, std::vector
     auto prefix = folder.substr(1);
 
     if(!prefix.empty() && prefix.back() != '/') {
-        prefix += '/';
+        //prefix += '/';
     }
 
 	auto& head = _http.head();
@@ -167,6 +167,12 @@ void bucket::list_objects(const std::string& folder, bool recursive, std::vector
 	else{
 		throw ossexcept(ossexcept::kXmlError,"fatal: xml not well-formed", __FUNCTION__);
 	}
+}
+
+
+void bucket::list_objects(const std::string& prefix, std::vector<meta::content>* objects)
+{
+
 }
 
 bool bucket::delete_object(const std::string& obj)

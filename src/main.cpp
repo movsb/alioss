@@ -173,7 +173,7 @@ int main()
                         std::vector<meta::content> files;
                         std::vector<std::string> folders;
 
-                        bkt.list_objects(folder, true, &files, &folders);
+                        bkt.list_objects(folder, false, &files, &folders);
 
                         std::cout << "Folders:\n";
                         for (const auto& f : folders) {
@@ -207,21 +207,30 @@ int main()
                 }
                 else if(command == "download") {
                     if(argc >= 3) {
-                        auto remote_path = argv[2];
+                        auto remote_path = file_system::normalize_slash(argv[2]);
                         auto remote_name = file_system::basename(remote_path);
                         auto local_dir = std::string(".");
                         auto local_name = remote_name;
 
                         if(argc >= 4) {
-                            if(file_system::is_folder(argv[3])) {
-                                local_dir = std::string(argv[3]);
+                            auto path = file_system::normalize_slash(argv[3]);
+                            if(file_system::is_folder(path)) {
+                                local_dir = path;
+                            }
+                            else if (path.back() == '/') {
+                                local_dir = path;
+                            }
+                            else {
+                                local_dir = file_system::dirname(path);
+                                if (local_dir.empty()) local_dir = ".";
+                                local_name = file_system::basename(path);
                             }
                         }
 
                         stream::file_ostream os;
                         os.open(local_dir + "/" + local_name);
 
-                        bkt.get_object(remote_path, os);
+                        //bkt.get_object(remote_path, os);
                     }
                 }
             }

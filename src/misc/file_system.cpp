@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "file_system.h"
 
 namespace alioss {
@@ -64,16 +66,17 @@ namespace alioss {
 #endif
         }
 
-        const char* normalize_slash(char* path)
+        void normalize_slash(std::string* path)
         {
-            auto s = path;
-            while (*path) {
-                if (*path == '\\')
-                    *path = '/';
+            std::replace(path->begin(), path->end(), '\\', '/');
+        }
 
-                ++path;
-            }
-            return s;
+
+        std::string normalize_slash(const std::string& path)
+        {
+            auto dup = path;
+            normalize_slash(&dup);
+            return dup;
         }
 
         bool is_folder(const std::string& path)

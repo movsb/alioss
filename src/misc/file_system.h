@@ -13,8 +13,14 @@
 
 namespace alioss {
     namespace file_system {
-        const char* normalize_slash(char* path);
+        // Replaces all occurrences of '\' to '/'
+        void normalize_slash(std::string* path);
+        std::string normalize_slash(const std::string& path);
+
+        // Returns the name component of a path
         std::string dirname(const std::string& path);
+
+        // Lists files in directory
         void ls(const std::string& dir, std::vector<std::string>* files);
 
         // Returns true if path exists and is a folder
