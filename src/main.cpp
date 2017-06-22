@@ -128,7 +128,7 @@ int main()
             "alioss.exe",
             "object",
             "list",
-            "/e/"
+            "/"
         };
 
         const char** argv = _argv;
@@ -172,7 +172,27 @@ int main()
                         auto folder = std::string(argv[2]);
                         std::vector<meta::content> files;
                         std::vector<std::string> folders;
+
                         bkt.list_objects(folder, true, &files, &folders);
+
+                        std::cout << "Folders:\n";
+                        for (const auto& f : folders) {
+                            std::cout << "  " << f << std::endl;
+                        }
+
+                        std::cout << "\n";
+
+                        std::cout << "Files:\n";
+                        for (const auto& f : files) {
+                            std::cout << "  " << f.key() << std::endl
+                                << "    Last modified : " << f.last_modified() << '\n'
+                                << "    Type          : " << f.type() << '\n'
+                                << "    Size          : " << f.size() << '\n'
+                                << "    ETag          : " << f.e_tag() << '\n'
+                                << "    Storage class : " << f.storage_class() << '\n'
+                                << "\n"
+                                ;
+                        }
                     }
                 }
                 else if(command == "head") {
