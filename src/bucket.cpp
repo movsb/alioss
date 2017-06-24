@@ -239,7 +239,7 @@ bool bucket::delete_object(const std::string& obj)
     return true;
 }
 
-bool bucket::get_object(const char* obj, stream::ostream& os, http::getter getter, const std::string& range/*=""*/, const std::string& unmodified_since/*=""*/)
+bool bucket::get_object(const std::string& obj, stream::ostream& os, http::getter getter, const std::string& range/*=""*/, const std::string& unmodified_since/*=""*/)
 {
     //---------------------------- Requesting----------------------------------
     auto& head = _http.head();

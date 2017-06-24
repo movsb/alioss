@@ -38,7 +38,7 @@ public:
 	void list_objects(const std::string& folder, bool recursive, std::vector<meta::content>* objects, std::vector<std::string>* folders);
 	void _list_objects_internal(const std::string& prefix, bool recursive, std::vector<meta::content>* objects, std::vector<std::string>* folders);
 
-    bool get_object(const char* obj, stream::ostream& os, http::getter getter = nullptr,
+    bool get_object(const std::string& obj, stream::ostream& os, http::getter getter = nullptr,
 		const std::string& range="", const std::string& unmodified_since="");
 
 	bool delete_object(const std::string& obj);

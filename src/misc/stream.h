@@ -14,6 +14,8 @@ Desc	: I'm not familiar with writing a class template,
 #include <string>
 #include <fstream>
 
+#include "strutil.h"
+
 namespace alioss{
 
 namespace stream{
@@ -49,7 +51,7 @@ namespace stream{
         }
 
         bool open(const std::string& file){
-            _fstm.open(file, std::ios_base::ate | std::ios_base::binary);
+            _fstm.open(strutil::from_utf8(file), std::ios_base::ate | std::ios_base::binary);
             return _fstm.is_open();
         }
 

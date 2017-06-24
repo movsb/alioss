@@ -1,5 +1,7 @@
 #include <algorithm>
 
+#include <shlobj.h>
+
 #include "file_system.h"
 
 namespace alioss {
@@ -89,6 +91,13 @@ namespace alioss {
 #endif
         }
 
+
+        bool is_file(const std::string& path)
+        {
+            DWORD dwAttr = ::GetFileAttributes(path.c_str());
+            return dwAttr != INVALID_FILE_ATTRIBUTES && !(dwAttr & FILE_ATTRIBUTE_DIRECTORY);
+        }
+
         std::string basename(const std::string& file)
         {
             auto off = file.rfind('/');
@@ -98,6 +107,27 @@ namespace alioss {
             else {
                 return file;
             }
+        }
+
+
+        bool mkdir(const std::string& path)
+        {
+            auto wpath = strutil::from_utf8(path);
+            if (!wpath.empty() && wpath.back() != '/'){
+                wpath += '/';
+            }
+            size_t pos = 0, off = 0;
+            while ((pos = wpath.find('/', off)) != wpath.npos) {
+                if (pos > off) {
+                    auto subdir = wpath.substr(0, pos);
+                    if (!::CreateDirectoryW(subdir.c_str(), nullptr) && ::GetLastError() != ERROR_ALREADY_EXISTS) {
+                        return false;
+                    }
+                }
+                off = pos + 1;
+            }
+
+            return true;
         }
 
     }

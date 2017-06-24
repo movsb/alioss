@@ -26,7 +26,11 @@ namespace alioss {
         // Returns true if path exists and is a folder
         bool is_folder(const std::string& path);
 
+        bool is_file(const std::string& path);
+
         // Gets the basename component of the file
         std::string basename(const std::string& file);
+
+        bool mkdir(const std::string& path);
     }
 }

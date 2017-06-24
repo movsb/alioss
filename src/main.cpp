@@ -165,12 +165,13 @@ int main()
 				;
 		};
 
-        int argc = 4;
+        int argc = 5;
         const char* _argv[] = {
             "alioss.exe",
             "object",
             "download",
-            "/e"
+            "/",
+            "./222/"
         };
 
         const char** argv = _argv;
@@ -205,8 +206,8 @@ int main()
         }
         else if(object == "object") {
             socket::endpoint ep;
-            ep.set_ep("120.77.166.164", 80);
-            bucket::bucket bkt(key, "twofei-test", "twofei-test.oss-cn-shenzhen.aliyuncs.com", ep);
+            ep.set_ep("120.55.35.17", 80);
+            bucket::bucket bkt(key, "twofei-wordpress", "twofei-wordpress.oss-cn-hangzhou.aliyuncs.com", ep);
             if(argc >= 2) {
                 auto command = std::string(argv[1]);
                 if(command == "list") {
@@ -269,7 +270,7 @@ int main()
 
                         if (!is_download_file) {
                             auto remote_path2 = remote_path.back() == '/' ? remote_path : remote_path + '/';
-                            auto has_dir = FolderFinder(folders)(remote_path2, false);
+                            auto has_dir = remote_path2 == "/" || FolderFinder(folders)(remote_path2, false);
                             if (!has_dir) {
                                 has_dir = FolderFinder(folders)(remote_path2, true);
                                 if (!has_dir) {
@@ -279,29 +280,68 @@ int main()
                             }
                         }
 
-                        auto remote_name = file_system::basename(remote_path);
-                        auto local_dir = std::string(".");
-                        auto local_name = remote_name;
+                        if (is_download_file) {
+                            auto local_dir = std::string(".");
+                            auto local_name = file_system::basename(remote_path);
 
-                        if(argc >= 4) {
-                            auto path = file_system::normalize_slash(argv[3]);
-                            if(file_system::is_folder(path)) {
-                                local_dir = path;
+                            if (argc >= 4) {
+                                auto str = file_system::normalize_slash(argv[3]);
+                                if (file_system::is_folder(str) || str.back() == '/') {
+                                    local_dir = str;
+                                    if (local_dir.back() == '/') {
+                                        local_dir.pop_back();
+                                    }
+                                }
+                                else {
+                                    local_dir = file_system::dirname(str);
+                                    local_name = file_system::basename(str);
+                                }
                             }
-                            else if (path.back() == '/') {
-                                local_dir = path;
+
+                            file_system::mkdir(local_dir);
+
+                            stream::file_ostream fos;
+                            fos.open(local_dir + '/' + local_name);
+
+                            std::cout << "Downloading " << remote_path << " ..." << std::endl;
+                            bkt.get_object(remote_path, fos);
+                        }
+                        else {
+                            auto local_dir = std::string(".");
+
+                            if (argc >= 4) {
+                                auto str = file_system::normalize_slash(argv[3]);
+                                if (file_system::is_file(str)) {
+                                    std::cerr << str << " exists, and is a folder." << std::endl;
+                                    return 1;
+                                }
+                                local_dir = str;
+                                if (local_dir.back() == '/') {
+                                    local_dir.pop_back();
+                                }
                             }
-                            else {
-                                local_dir = file_system::dirname(path);
-                                if (local_dir.empty()) local_dir = ".";
-                                local_name = file_system::basename(path);
+
+                            std::vector<meta::content> files;
+                            std::vector<std::string> folders;
+
+                            bkt.list_objects(remote_path, true, &files, &folders);
+
+                            auto prefix = remote_path.back() == '/' ? remote_path : remote_path + '/';
+
+                            for (const auto& f : folders) {
+                                auto path = local_dir + '/' + (f.c_str() + prefix.size());
+                                file_system::mkdir(path);
+                            }
+
+                            for (const auto& f : files) {
+                                stream::file_ostream fos;
+                                auto path = local_dir + '/' + (f.key().c_str() + prefix.size());
+                                fos.open(path);
+                                std::cout << "Downloading " << f.key() << " ..." << std::endl;
+                                bkt.get_object(f.key(), fos);
                             }
                         }
 
-                        stream::file_ostream os;
-                        os.open(local_dir + "/" + local_name);
-
-                        //bkt.get_object(remote_path, os);
                     }
                 }
             }
