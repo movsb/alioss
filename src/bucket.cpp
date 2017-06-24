@@ -30,18 +30,8 @@ bool bucket::disconnect()
 	return _http.disconnect();
 }
 
-void bucket::list_objects(const std::string& folder, bool recursive, std::vector<meta::content>* objects, std::vector<std::string>* folders)
+void bucket::_list_objects_internal(const std::string& prefix, bool recursive, std::vector<meta::content>* objects, std::vector<std::string>* folders)
 {
-    if(folder.empty() || folder[0] != '/') {
-        throw ossexcept(ossexcept::kInvalidPath);
-    }
-
-    auto prefix = folder.substr(1);
-
-    if(!prefix.empty() && prefix.back() != '/') {
-        //prefix += '/';
-    }
-
 	auto& head = _http.head();
 	head.clear();
 
@@ -107,22 +97,19 @@ void bucket::list_objects(const std::string& folder, bool recursive, std::vector
             objs.clear();
             dirs.clear();
 
-            auto la_is_folder = [](const char* key) {
-                return key != nullptr
-                    && *key != '\0'
-                    && key[std::strlen(key) - 1] == '/'
-                    ;
+            auto la_is_folder = [](const std::string& key) {
+                return !key.empty() && key.back() == '/';
             };
 
 			for (auto onec = List_bucket_result->FirstChildElement("Contents");
 				onec != nullptr;
 				onec = onec->NextSiblingElement("Contents"))
 			{
-                auto key = la_get_value(onec, "Key");
+                auto key = (std::string)la_get_value(onec, "Key");
                 if (!la_is_folder(key)) {
                     meta::content file;
 
-                    file.set_key(la_get_value(onec, "Key"));
+                    file.set_key(('/' + key).c_str());
                     file.set_last_modified(la_get_value(onec, "LastModified"));
                     file.set_e_tag(la_get_value(onec, "ETag"));
                     file.set_type(la_get_value(onec, "Type"));
@@ -136,7 +123,7 @@ void bucket::list_objects(const std::string& folder, bool recursive, std::vector
                     objs.push_back(std::move(file));
                 }
                 else {
-                    dirs.push_back(key);
+                    dirs.push_back('/' + key);
                 }
 			}
 
@@ -146,7 +133,7 @@ void bucket::list_objects(const std::string& folder, bool recursive, std::vector
 				oned = oned->NextSiblingElement("CommonPrefixes"))
 			{
 				auto dir = oned->FirstChild()->FirstChild()->ToText()->Value();
-                dirs.push_back(dir);
+                dirs.push_back('/' + dir);
 			}
 
             return;
@@ -170,9 +157,29 @@ void bucket::list_objects(const std::string& folder, bool recursive, std::vector
 }
 
 
-void bucket::list_objects(const std::string& prefix, std::vector<meta::content>* objects)
+void bucket::list_objects(const std::string& prefix, std::vector<meta::content>* objects, std::vector<std::string>* folders)
 {
+    if (prefix.empty() || prefix[0] != '/') {
+        throw ossexcept(ossexcept::kInvalidPath);
+    }
 
+    return _list_objects_internal(prefix.substr(1), true, objects, folders);
+}
+
+
+void bucket::list_objects(const std::string& folder, bool recursive, std::vector<meta::content>* objects, std::vector<std::string>* folders)
+{
+    if (folder.empty() || folder[0] != '/') {
+        throw ossexcept(ossexcept::kInvalidPath);
+    }
+
+    auto prefix = folder.substr(1);
+
+    if (!prefix.empty() && prefix.back() != '/') {
+        prefix += '/';
+    }
+
+    return _list_objects_internal(prefix, recursive, objects, folders);
 }
 
 bool bucket::delete_object(const std::string& obj)

@@ -34,7 +34,7 @@ public:
 	bool connect();
 	bool disconnect();
 
-	void list_objects(const std::string& prefix, std::vector<meta::content>* objects);
+	void list_objects(const std::string& prefix, std::vector<meta::content>* objects, std::vector<std::string>* folders);
 	void list_objects(const std::string& folder, bool recursive, std::vector<meta::content>* objects, std::vector<std::string>* folders);
 	void _list_objects_internal(const std::string& prefix, bool recursive, std::vector<meta::content>* objects, std::vector<std::string>* folders);
 

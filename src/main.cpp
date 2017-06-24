@@ -61,6 +61,48 @@ bool read_access_key(accesskey* key)
 	return true;
 }
 
+template<typename Element>
+struct Finder
+{
+    template<typename T, typename R = std::string>
+    struct ElementGetter
+    {
+        const R& operator()(const T& t)
+        {
+            return t;
+        }
+    };
+
+    template<>
+    struct ElementGetter<meta::content>
+    {
+        const std::string& operator()(const meta::content& file)
+        {
+            return file.key();
+        }
+    };
+
+    typedef std::vector<Element> Container;
+    typedef ElementGetter<Element> Getter;
+
+    const Container&_con;
+
+    Finder(const Container& con)
+        : _con(con)
+    {}
+
+    bool operator()(const std::string& subject, bool case_sensitive)
+    {
+        return std::find_if(_con.cbegin(), _con.cend(), [&subject, &case_sensitive](const Element& search){
+            return (case_sensitive ? strcmp : _stricmp)(subject.c_str(), Getter()(search).c_str()) == 0;
+        }) != _con.cend();
+    }
+};
+
+typedef Finder<std::string> FolderFinder;
+typedef Finder<meta::content> FileFinder;
+
+
 //int main(int argc, const char* argv[])
 int main()
 {
@@ -127,8 +169,8 @@ int main()
         const char* _argv[] = {
             "alioss.exe",
             "object",
-            "list",
-            "/"
+            "download",
+            "/e"
         };
 
         const char** argv = _argv;
@@ -208,6 +250,35 @@ int main()
                 else if(command == "download") {
                     if(argc >= 3) {
                         auto remote_path = file_system::normalize_slash(argv[2]);
+
+                        std::vector<meta::content> files;
+                        std::vector<std::string> folders;
+                        bkt.list_objects(remote_path, &files, &folders);
+
+                        bool is_download_file = remote_path.back() != '/';
+
+                        if (is_download_file) {
+                            auto has_file = FileFinder(files)(remote_path, false);
+                            if (!has_file) {
+                                has_file = FileFinder(files)(remote_path, true);
+                                if (!has_file) {
+                                    is_download_file = false;
+                                }
+                            }
+                        }
+
+                        if (!is_download_file) {
+                            auto remote_path2 = remote_path.back() == '/' ? remote_path : remote_path + '/';
+                            auto has_dir = FolderFinder(folders)(remote_path2, false);
+                            if (!has_dir) {
+                                has_dir = FolderFinder(folders)(remote_path2, true);
+                                if (!has_dir) {
+                                    std::cerr << "No such file or folder: " << remote_path << std::endl;
+                                    return 1;
+                                }
+                            }
+                        }
+
                         auto remote_name = file_system::basename(remote_path);
                         auto local_dir = std::string(".");
                         auto local_name = remote_name;
