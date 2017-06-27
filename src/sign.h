@@ -31,12 +31,25 @@ protected:
 
 std::string sign(const accesskey& keysec, const std::string& str);
 
-std::string sign(
+std::string sign_head(
     const accesskey& keysec,
     const std::string& verb,
     const std::string& content_md5,
     const std::string& content_type,
     const std::string& date,
+    const std::string& resource
+);
+
+std::string sign_head(
+    const accesskey& keysec,
+    const std::string& verb,
+    const std::string& date,
+    const std::string& resource
+);
+
+std::string sign_url(
+    const accesskey& keysec,
+    int expiration,
     const std::string& resource
 );
 

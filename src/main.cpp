@@ -2,6 +2,7 @@
 #include <vector>
 #include <cstdio>
 #include <csignal>
+#include <ctime>
 #include <iostream>
 #include <fstream>
 #include <functional>
@@ -154,6 +155,7 @@ int main()
                 << "\n"
                 << "    object list         <directory>\n"
                 << "    object head         <file>\n"
+                << "    object sign         <file>          <expiration>\n"
                 << "\n"
                 << "    object download     <file>          [file/directory]\n"
                 << "    object download     <directory>     [directory]\n"
@@ -169,9 +171,9 @@ int main()
         const char* _argv[] = {
             "alioss.exe",
             "object",
-            "download",
+            "sign",
             "/",
-            "./222/"
+            "15"
         };
 
         const char** argv = _argv;
@@ -246,6 +248,81 @@ int main()
                             std::printf("%-25s: %s\n", key.c_str(), val.c_str());
                             return true;
                         });
+                    }
+                }
+                else if (command == "sign") {
+                    if (argc >= 4) {
+                        auto file = argv[2];
+
+                        auto parse_expiration = [](const std::string& expr) {
+                            int day = 0, hour = 0, minute = 0, second = 0;
+
+                            for (size_t i = 0; i < expr.size();) {
+                                int num = 0;
+                                char unit = 's';
+
+                                for (; i < expr.size(); i++) {
+                                    if ('0' <= expr[i] && expr[i] <= '9') {
+                                        num *= 10;
+                                        num += expr[i] - '0';
+                                    }
+                                    else {
+                                        break;
+                                    }
+                                }
+
+                                if (i < expr.size()) {
+                                    unit = expr[i];
+                                    i++;
+                                }
+
+                                int* p;
+
+                                switch (unit)
+                                {
+                                case 'd': p = &day; break;
+                                case 'h': p = &hour; break;
+                                case 'm': p = &minute; break;
+                                case 's': p = &second; break;
+                                default: return -1;
+                                }
+
+                                *p = num;
+                            }
+
+                            int expiration
+                                = day * (24 * 60 * 60)
+                                + hour * (60 * 60)
+                                + minute * (60)
+                                + second * (1)
+                                ;
+
+                            return expiration;
+                        };
+
+                        auto expr= parse_expiration(argv[3]);
+                        if (expr == -1) {
+                            std::cerr << "Bad expiration." << std::endl;
+                            return - 1;
+                        }
+
+                        auto current = std::time(nullptr);
+                        auto expiration = current + expr;
+                        auto expr_str = std::to_string(expiration);
+
+                        std::string url;
+                        url += "http://";
+                        url += "twofei-wordpress.oss-cn-hangzhou.aliyuncs.com";
+
+                        std::map<std::string, std::string> query = {
+                            { "OSSAccessKeyId",  key.key()},
+                            { "Expires",        expr_str },
+                            { "Signature",      sign_url(key, expiration, std::string("/twofei-wordpress") + file)},
+                        };
+
+                        url += strutil::make_uri(file, query);
+
+                        std::cout << url << std::endl;
                     }
                 }
                 else if(command == "download") {

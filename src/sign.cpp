@@ -15,27 +15,39 @@ std::string sign(const accesskey& keysec, const std::string& msg)
 
 	std::string b64str(cbase64::update(hmac_sha1.digest(), 20));
 
-	std::string sig("OSS ");
-	sig += keysec.key();
-	sig += ":";
-	sig += b64str;
-
-	return sig;
+    return b64str;
 }
 
 
-std::string sign(const accesskey& keysec, const std::string& verb, const std::string& content_md5, const std::string& content_type, const std::string& date, const std::string& resource)
+std::string sign_head(const accesskey& keysec, const std::string& verb, const std::string& content_md5, const std::string& content_type, const std::string& date, const std::string& resource)
 {
-    std::ostringstream iss;
+    std::ostringstream oss;
     
-    iss << verb << '\n'
+    oss << verb << '\n'
         << content_md5 << '\n'
         << content_type << '\n'
         << date << '\n'
         << resource
         ;
 
-    return sign(keysec, iss.str());
+    auto signstr = sign(keysec, oss.str());
+
+    return "OSS " + keysec.secret() + ':' + signstr;
+}
+
+
+std::string sign_head(const accesskey& keysec, const std::string& verb, const std::string& date, const std::string& resource)
+{
+    return sign_head(keysec, verb, "", "", date, resource);
+}
+
+std::string sign_url(const accesskey& keysec, int expiration, const std::string& resource)
+{
+    std::ostringstream oss;
+
+    oss << "GET\n\n\n" << expiration << '\n' << resource;
+
+    return sign(keysec, oss.str());
 }
 
 std::string content_md5(const void* data, int size)

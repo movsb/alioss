@@ -1,5 +1,7 @@
 #include "strutil.h"
 
+#include <sstream>
+
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -160,6 +162,29 @@ namespace alioss{
             return std::move(ret);
         }
 
-	}
+        std::string make_uri(const std::string& resource, const std::map<std::string, std::string>& query)
+        {
+            std::ostringstream oss;
+
+            oss << encode_uri(resource);
+
+            if (!query.empty()) {
+                std::string qs;
+
+                for (const auto& kv : query) {
+                    auto ek = strutil::encode_uri_component(kv.first);
+                    auto ev = strutil::encode_uri_component(kv.second);
+                    qs += '&' + ek + '=' + ev;
+                }
+
+                qs[0] = '?';
+
+                oss << qs;
+            }
+
+            return std::move(oss.str());
+        }
+
+    }
 }
 

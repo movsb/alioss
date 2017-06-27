@@ -10,6 +10,7 @@ Desc	: String manipulation
 
 #include <string>
 #include <vector>
+#include <map>
 #include <unordered_set>
 #include <codecvt>
 #include <memory>
@@ -36,6 +37,8 @@ std::string to_utf8(const std::string& s);
 
 std::string encode_uri(const std::string& s);
 std::string encode_uri_component(const std::string& s);
+
+std::string make_uri(const std::string& resource, const std::map<std::string, std::string>& query);
 
 }
 }

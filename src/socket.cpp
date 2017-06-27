@@ -310,21 +310,7 @@ void header::head::set_request(const std::string & method, const std::string & r
 
     oss << method << ' ';
 
-    oss << strutil::encode_uri(resource);
-
-    if(!query.empty()) {
-        std::string qs;
-
-        for(const auto& kv : query) {
-            auto ek = strutil::encode_uri_component(kv.first);
-            auto ev = strutil::encode_uri_component(kv.second);
-            qs += '&' + ek + '=' + ev;
-        }
-
-        qs[0] = '?';
-
-        oss << qs;
-    }
+    oss << strutil::make_uri(resource, query);
 
     oss << ' ';
     oss << version;

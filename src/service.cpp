@@ -42,7 +42,7 @@ void service::list_buckets(std::vector<meta::bucket>* buckets)
 	head.add_date(date);
 
 	// Authorization
-    head.add_authorization(sign(_key, "GET", "", "", date, "/"));
+    head.add_authorization(sign_head(_key, "GET", date, "/"));
 
 	// Connection
 	head.add_connection("close");
