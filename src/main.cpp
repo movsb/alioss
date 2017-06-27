@@ -172,11 +172,12 @@ int main(int argc, const char* argv[])
 		};
 
 #ifdef _DEBUG
-        int argc = 3;
+        int argc = 4;
         const char* _argv[] = {
             "alioss.exe",
-            "bucket",
+            "object",
             "list",
+            "/"
         };
 
         const char** argv = _argv;

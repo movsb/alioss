@@ -124,7 +124,7 @@ void bucket::_list_objects_internal(const std::string& prefix, bool recursive, s
                     objs.push_back(std::move(file));
                 }
                 else {
-                    dirs.push_back('/' + key);
+                    dirs.push_back(std::string("/") + key);
                 }
 			}
 
@@ -134,7 +134,7 @@ void bucket::_list_objects_internal(const std::string& prefix, bool recursive, s
 				oned = oned->NextSiblingElement("CommonPrefixes"))
 			{
 				auto dir = oned->FirstChild()->FirstChild()->ToText()->Value();
-                dirs.push_back('/' + dir);
+                dirs.push_back(std::string("/") + dir);
 			}
 
             return;
