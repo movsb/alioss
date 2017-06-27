@@ -41,7 +41,7 @@ std::string sign_head(const accesskey& keysec, const std::string& verb, const st
     return sign_head(keysec, verb, "", "", date, resource);
 }
 
-std::string sign_url(const accesskey& keysec, int expiration, const std::string& resource)
+std::string sign_url(const accesskey& keysec, time_t expiration, const std::string& resource)
 {
     std::ostringstream oss;
 

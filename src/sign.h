@@ -2,6 +2,7 @@
 #define __alioss_sign_h__
 
 #include <string>
+#include <ctime>
 
 namespace alioss {
 
@@ -49,7 +50,7 @@ std::string sign_head(
 
 std::string sign_url(
     const accesskey& keysec,
-    int expiration,
+    time_t expiration,
     const std::string& resource
 );
 

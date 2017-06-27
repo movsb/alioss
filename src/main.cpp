@@ -103,9 +103,11 @@ struct Finder
 typedef Finder<std::string> FolderFinder;
 typedef Finder<meta::content> FileFinder;
 
-
-//int main(int argc, const char* argv[])
+#ifdef _DEBUG
 int main()
+#else
+int main(int argc, const char* argv[])
+#endif // _DEBUG
 {
 #ifdef _WIN32
     SetConsoleCP(CP_UTF8);
@@ -148,25 +150,28 @@ int main()
 		service::service svc(key, ep);
 
 		auto la_command_service = [&](){
-            std::cout << "alioss - the simple Ali OSS manager\n";
+            std::cout << "alioss - a simple Ali OSS manager\n";
             std::cout << "\n";
 			std::cout 
-                << "    bucket list\n"
+                << "Syntax:\n\n"
+                << "    <type>   <command>    [parameters...]\n\n"
+                << "    bucket   list\n"
                 << "\n"
-                << "    object list         <directory>\n"
-                << "    object head         <file>\n"
-                << "    object sign         <file>          <expiration>\n"
+                << "    object   list         <directory>\n"
+                << "    object   head         <file>\n"
+                << "    object   sign         <file>          <expiration>\n"
                 << "\n"
-                << "    object download     <file>          [file/directory]\n"
-                << "    object download     <directory>     [directory]\n"
+                << "    object   download     <file>          [file/directory]\n"
+                << "    object   download     <directory>     [directory]\n"
                 << "\n"
-                << "    object upload       <file>          <file>\n"
-                << "    object upload       <directory>     <file>\n"
-                << "    object upload       <directory>     <directory>\n"
+                << "    object   upload       <file>          <file>\n"
+                << "    object   upload       <directory>     <file>\n"
+                << "    object   upload       <directory>     <directory>\n"
                 << "\n"
 				;
 		};
 
+#ifdef _DEBUG
         int argc = 5;
         const char* _argv[] = {
             "alioss.exe",
@@ -177,6 +182,7 @@ int main()
         };
 
         const char** argv = _argv;
+#endif // _DEBUG
 
         if(argc < 2) {
             la_command_service();
