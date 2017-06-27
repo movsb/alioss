@@ -32,7 +32,7 @@ std::string sign_head(const accesskey& keysec, const std::string& verb, const st
 
     auto signstr = sign(keysec, oss.str());
 
-    return "OSS " + keysec.secret() + ':' + signstr;
+    return "OSS " + keysec.key() + ':' + signstr;
 }
 
 
