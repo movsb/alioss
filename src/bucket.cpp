@@ -1,6 +1,7 @@
 #include <stdexcept>
 #include <iostream>
 #include <memory>
+#include <unordered_set>
 #include <cstring>
 
 #include <tinyxml2/tinyxml2.h>
@@ -30,7 +31,7 @@ bool bucket::disconnect()
 	return _http.disconnect();
 }
 
-bool bucket::_list_objects_internal(const std::string & prefix, const std::string& marker, bool recursive, std::vector<meta::content>* objects, std::vector<std::string>* folders, std::string* next_marker)
+bool bucket::_list_objects_internal(const std::string & prefix, const std::string& marker, bool recursive, std::vector<meta::content>* objects, std::vector<std::string>* folders, std::string* next_marker, std::unordered_set<std::string>* prefixes)
 {
 	auto& head = _http.head();
 	head.clear();
@@ -99,16 +100,14 @@ bool bucket::_list_objects_internal(const std::string & prefix, const std::strin
             auto& objs = *objects;
             auto& dirs = *folders;
 
-            auto la_is_folder = [](const std::string& key) {
-                return !key.empty() && key.back() == '/';
-            };
-
 			for (auto onec = List_bucket_result->FirstChildElement("Contents");
 				onec != nullptr;
 				onec = onec->NextSiblingElement("Contents"))
 			{
                 auto key = (std::string)la_get_value(onec, "Key");
-                if (!la_is_folder(key)) {
+                auto is_file = key.back() != '/';
+
+                if (!recursive || is_file) {
                     meta::content file;
 
                     file.set_key(('/' + key).c_str());
@@ -117,26 +116,38 @@ bool bucket::_list_objects_internal(const std::string & prefix, const std::strin
                     file.set_type(la_get_value(onec, "Type"));
                     file.set_size(la_get_value(onec, "Size"));
                     file.set_storage_class(la_get_value(onec, "StorageClass"));
-                    file.set_owner( // so long?
+                    file.set_owner(
                         onec->FirstChildElement("Owner")->FirstChild()->FirstChild()->ToText()->Value(),
                         onec->FirstChildElement("Owner")->FirstChild()->NextSibling()->FirstChild()->ToText()->Value()
                         );
 
                     objs.push_back(std::move(file));
                 }
-                else {
-                    dirs.push_back(std::string("/") + key);
+
+                if(recursive) {
+                    if(is_file) {
+                        auto off = key.rfind('/');
+                        if(off != key.npos) {
+                            prefixes->emplace('/' + key.substr(0, off + 1));
+                        }
+                        else {
+                            prefixes->emplace("/");
+                        }
+                    }
+                    else {
+                        prefixes->emplace('/' + key);
+                    }
                 }
 			}
 
-			// Travels all directories. Its xml style is hard to understand.
-			for (auto oned = List_bucket_result->FirstChildElement("CommonPrefixes");
-				oned != nullptr;
-				oned = oned->NextSiblingElement("CommonPrefixes"))
-			{
-				auto dir = oned->FirstChild()->FirstChild()->ToText()->Value();
-                dirs.push_back(std::string("/") + dir);
-			}
+            if(!recursive) {
+                for(auto oned = List_bucket_result->FirstChildElement("CommonPrefixes");
+                    oned != nullptr;
+                    oned = oned->NextSiblingElement("CommonPrefixes")) {
+                    auto dir = oned->FirstChild()->FirstChild()->ToText()->Value();
+                    dirs.push_back(std::string("/") + dir);
+                }
+            }
 
             return is_truncated == false;
 		}
@@ -161,12 +172,19 @@ bool bucket::_list_objects_internal(const std::string & prefix, const std::strin
 void bucket::_list_objects_loop(const std::string & prefix, bool recursive, std::vector<meta::content>* objects, std::vector<std::string>* folders)
 {
     std::string marker;
+    std::unordered_set<std::string> prefixes;
 
     objects->clear();
     folders->clear();
 
-    while(!_list_objects_internal(prefix, marker, recursive, objects, folders, &marker)) {
+    while(!_list_objects_internal(prefix, marker, recursive, objects, folders, &marker, &prefixes)) {
         // empty block
+    }
+
+    if(recursive) {
+        for(auto& f : std::move(prefixes)) {
+            folders->emplace_back(std::move(f));
+        }
     }
 }
 

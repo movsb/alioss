@@ -63,7 +63,7 @@ public:
 
 protected:
 	void _list_objects_loop(const std::string& prefix, bool recursive, std::vector<meta::content>* objects, std::vector<std::string>* folders);
-	bool _list_objects_internal(const std::string& prefix, const std::string& marker, bool recursive, std::vector<meta::content>* objects, std::vector<std::string>* folders, std::string* next_marker);
+    bool _list_objects_internal(const std::string & prefix, const std::string & marker, bool recursive, std::vector<meta::content>* objects, std::vector<std::string>* folders, std::string * next_marker, std::unordered_set<std::string>* prefixes);
 
 protected: // Request Parameters
 	std::string _delimiter;
