@@ -149,7 +149,7 @@ int main(int argc, const char* argv[])
 
 		service::service svc(key, ep);
 
-		auto la_command_service = [&](){
+		auto la_command_service = [](){
             std::cout << "alioss - a simple Ali OSS manager\n";
             std::cout << "\n";
 			std::cout 
@@ -223,7 +223,7 @@ int main(int argc, const char* argv[])
                         std::vector<meta::content> files;
                         std::vector<std::string> folders;
 
-                        bkt.list_objects(folder, false, &files, &folders);
+                        bkt.list_objects(folder, true, &files, &folders);
 
                         std::cout << "Folders:\n";
                         for (const auto& f : folders) {

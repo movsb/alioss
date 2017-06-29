@@ -36,7 +36,6 @@ public:
 
 	void list_objects(const std::string& prefix, std::vector<meta::content>* objects, std::vector<std::string>* folders);
 	void list_objects(const std::string& folder, bool recursive, std::vector<meta::content>* objects, std::vector<std::string>* folders);
-	void _list_objects_internal(const std::string& prefix, bool recursive, std::vector<meta::content>* objects, std::vector<std::string>* folders);
 
     bool get_object(const std::string& obj, stream::ostream& os, http::getter getter = nullptr,
 		const std::string& range="", const std::string& unmodified_since="");
@@ -61,6 +60,10 @@ public:
 		const char* if_match = nullptr,
 		const char* if_none_match = nullptr
     );
+
+protected:
+	void _list_objects_loop(const std::string& prefix, bool recursive, std::vector<meta::content>* objects, std::vector<std::string>* folders);
+	bool _list_objects_internal(const std::string& prefix, const std::string& marker, bool recursive, std::vector<meta::content>* objects, std::vector<std::string>* folders, std::string* next_marker);
 
 protected: // Request Parameters
 	std::string _delimiter;

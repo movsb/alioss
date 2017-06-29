@@ -30,7 +30,7 @@ bool bucket::disconnect()
 	return _http.disconnect();
 }
 
-void bucket::_list_objects_internal(const std::string& prefix, bool recursive, std::vector<meta::content>* objects, std::vector<std::string>* folders)
+bool bucket::_list_objects_internal(const std::string & prefix, const std::string& marker, bool recursive, std::vector<meta::content>* objects, std::vector<std::string>* folders, std::string* next_marker)
 {
 	auto& head = _http.head();
 	head.clear();
@@ -39,9 +39,10 @@ void bucket::_list_objects_internal(const std::string& prefix, bool recursive, s
 	// Verb
     head.set_request("GET", "/", 
         {
-            {"prefix", prefix},
-            {"delimiter", recursive ? "" : "/"},
-            { "max-keys", "1000" },
+            { "prefix", prefix},
+            { "delimiter", recursive ? "" : "/"},
+            { "max-keys", "100" },
+            { "marker", marker},
         }
     );
 
@@ -84,7 +85,10 @@ void bucket::_list_objects_internal(const std::string& prefix, bool recursive, s
 			// TODO: UTF-8 convert (Windows)
 			auto List_bucket_result = doc.FirstChildElement("ListBucketResult");
 			
-			//TODO: isTruncated
+            auto is_truncated = List_bucket_result->FirstChildElement("IsTruncated")->FirstChild()->ToText()->Value() == std::string("true");
+            if(is_truncated) {
+                *next_marker = List_bucket_result->FirstChildElement("NextMarker")->FirstChild()->ToText()->Value();
+            }
 
 			// Travels All Contents. why name an Object `Contents'? why ain't its container?
 			auto la_get_value = [](tinyxml2::XMLElement* e, const char* name)->const char*{
@@ -94,9 +98,6 @@ void bucket::_list_objects_internal(const std::string& prefix, bool recursive, s
 
             auto& objs = *objects;
             auto& dirs = *folders;
-
-            objs.clear();
-            dirs.clear();
 
             auto la_is_folder = [](const std::string& key) {
                 return !key.empty() && key.back() == '/';
@@ -137,7 +138,7 @@ void bucket::_list_objects_internal(const std::string& prefix, bool recursive, s
                 dirs.push_back(std::string("/") + dir);
 			}
 
-            return;
+            return is_truncated == false;
 		}
         else {
 			throw ossexcept(ossexcept::kXmlError, "fatal: xml not well-formed", __FUNCTION__);
@@ -157,6 +158,17 @@ void bucket::_list_objects_internal(const std::string& prefix, bool recursive, s
 	}
 }
 
+void bucket::_list_objects_loop(const std::string & prefix, bool recursive, std::vector<meta::content>* objects, std::vector<std::string>* folders)
+{
+    std::string marker;
+
+    objects->clear();
+    folders->clear();
+
+    while(!_list_objects_internal(prefix, marker, recursive, objects, folders, &marker)) {
+        // empty block
+    }
+}
 
 void bucket::list_objects(const std::string& prefix, std::vector<meta::content>* objects, std::vector<std::string>* folders)
 {
@@ -164,7 +176,7 @@ void bucket::list_objects(const std::string& prefix, std::vector<meta::content>*
         throw ossexcept(ossexcept::kInvalidPath);
     }
 
-    return _list_objects_internal(prefix.substr(1), true, objects, folders);
+    return _list_objects_loop(prefix.substr(1), true, objects, folders);
 }
 
 
@@ -180,7 +192,7 @@ void bucket::list_objects(const std::string& folder, bool recursive, std::vector
         prefix += '/';
     }
 
-    return _list_objects_internal(prefix, recursive, objects, folders);
+    return _list_objects_loop(prefix, recursive, objects, folders);
 }
 
 bool bucket::delete_object(const std::string& obj)
