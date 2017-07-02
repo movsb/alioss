@@ -365,7 +365,7 @@ bool bucket::put_object(const std::string& obj, stream::istream& is, http::putte
     head.add_date(date.c_str());
 
     // Authorization
-    head.add_authorization(sign_head(_key, "PUT", date, '/' + _name + obj));
+    head.add_authorization(sign_head(_key, "PUT", "", content_type, date, '/' + _name + obj));
 
     // Connection
     head.add_connection("close");

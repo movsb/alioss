@@ -145,8 +145,6 @@ int main(int argc, const char* argv[])
 	ep.set_ep(resolver[0], 80);
 
 	try {
-		std::string str;
-
 		service::service svc(key, ep);
 
 		auto la_command_service = [](){
@@ -172,12 +170,13 @@ int main(int argc, const char* argv[])
 		};
 
 #ifdef _DEBUG
-        int argc = 4;
+        int argc = 5;
         const char* _argv[] = {
             "alioss.exe",
             "object",
-            "list",
-            "/"
+            "upload",
+            "/",
+            "./Debug/kimi.jpg"
         };
 
         const char** argv = _argv;
@@ -424,6 +423,42 @@ int main(int argc, const char* argv[])
                             }
                         }
 
+                    }
+                }
+                else if (command == "upload") {
+                    if (argc >= 4) {
+                        auto dst = file_system::normalize_slash(argv[2]);
+                        if (dst[0] != '/')  {
+                            std::cerr << "Bad remote path." << std::endl;
+                            return -1;
+                        }
+
+                        auto is_dst_folder = dst.back() == '/';
+                        if (is_dst_folder) dst.pop_back();
+
+                        auto src = file_system::normalize_slash(argv[3]);
+
+                        if (!file_system::is_file(src) && !file_system::is_folder(src)) {
+                            std::cerr << "No such file or directory: " << src << std::endl;
+                            return -1;
+                        }
+
+                        auto remote_dir = is_dst_folder ? dst : file_system::dirname(dst);
+                        auto remote_name = is_dst_folder ? "" : file_system::basename(dst);
+
+                        if (file_system::is_file(src)) {
+                            if (is_dst_folder) {
+                                remote_name = file_system::basename(src);
+                            }
+
+                            auto remote_path = remote_dir + '/' + remote_name;
+                            auto local_path = src;
+
+                            stream::file_istream fis;
+                            fis.open(local_path);
+                            std::cout << "Uploading `" << local_path << "' ...";
+                            bkt.put_object(remote_path, fis);
+                        }
                     }
                 }
             }

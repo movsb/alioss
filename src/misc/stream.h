@@ -61,7 +61,41 @@ namespace stream{
 
     protected:
         std::ofstream _fstm;
-};
+    };
+
+    class file_istream : public stream::istream{
+    public:
+        virtual int size() const override{
+            return _fsize;
+        }
+        virtual int read_some(unsigned char* buf, int sz) override{
+            _filestm.read((char*)buf, sz);
+            _fsize -= (int)_filestm.gcount();
+            return (int)_filestm.gcount();
+        }
+
+    public:
+        bool open(const std::string& file){
+            _filestm.open(strutil::from_utf8(file), std::ios_base::binary);
+            if (_filestm.is_open()){
+                _filestm.seekg(0, std::ios_base::end);
+                _fsize = (size_t)_filestm.tellg();
+                _filestm.seekg(0, std::ios_base::beg);
+            }
+            return _filestm.is_open();
+        }
+        void close(){
+            _filestm.close();
+        }
+
+        ~file_istream(){
+            close();
+        }
+
+    protected:
+        size_t _fsize;
+        std::ifstream _filestm;
+    };
 
 } // namespace stream
 
