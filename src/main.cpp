@@ -433,9 +433,6 @@ int main(int argc, const char* argv[])
                             return -1;
                         }
 
-                        auto is_dst_folder = dst.back() == '/';
-                        if (is_dst_folder) dst.pop_back();
-
                         auto src = file_system::normalize_slash(argv[3]);
 
                         if (!file_system::is_file(src) && !file_system::is_folder(src)) {
@@ -443,20 +440,25 @@ int main(int argc, const char* argv[])
                             return -1;
                         }
 
-                        auto remote_dir = is_dst_folder ? dst : file_system::dirname(dst);
-                        auto remote_name = is_dst_folder ? "" : file_system::basename(dst);
-
                         if (file_system::is_file(src)) {
+                            std::string remote_path;
+
+                            auto is_dst_folder = dst.back() == '/';
+
                             if (is_dst_folder) {
+                                std::string remote_dir, remote_name;
+                                remote_dir = dst;
+                                remote_dir.pop_back();
                                 remote_name = file_system::basename(src);
+                                remote_path = remote_dir + '/' + remote_name;
+                            }
+                            else {
+                                remote_path = dst;
                             }
 
-                            auto remote_path = remote_dir + '/' + remote_name;
-                            auto local_path = src;
-
                             stream::file_istream fis;
-                            fis.open(local_path);
-                            std::cout << "Uploading `" << local_path << "' ...";
+                            fis.open(src);
+                            std::cout << "Uploading `" << src << "' ...";
                             bkt.put_object(remote_path, fis);
                         }
                     }
