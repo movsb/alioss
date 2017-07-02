@@ -182,6 +182,7 @@ void bucket::_list_objects_loop(const std::string & prefix, bool recursive, std:
     }
 
     if(recursive) {
+        prefixes.erase("/");
         for(auto& f : std::move(prefixes)) {
             folders->emplace_back(std::move(f));
         }

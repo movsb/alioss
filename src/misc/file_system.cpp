@@ -85,7 +85,7 @@ namespace alioss {
         {
 #ifdef _WIN32
             DWORD dwAttr = ::GetFileAttributes(path.c_str());
-            return !!(dwAttr & FILE_ATTRIBUTE_DIRECTORY);
+            return dwAttr != INVALID_FILE_ATTRIBUTES && !!(dwAttr & FILE_ATTRIBUTE_DIRECTORY);
 #else
             assert(0);
 #endif
@@ -120,8 +120,10 @@ namespace alioss {
             while ((pos = wpath.find('/', off)) != wpath.npos) {
                 if (pos > off) {
                     auto subdir = wpath.substr(0, pos);
-                    if (!::CreateDirectoryW(subdir.c_str(), nullptr) && ::GetLastError() != ERROR_ALREADY_EXISTS) {
-                        return false;
+                    if (subdir != L".") {
+                        if (!::CreateDirectoryW(subdir.c_str(), nullptr) && ::GetLastError() != ERROR_ALREADY_EXISTS) {
+                            return false;
+                        }
                     }
                 }
                 off = pos + 1;
