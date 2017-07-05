@@ -103,12 +103,12 @@ struct Finder
 typedef Finder<std::string> FolderFinder;
 typedef Finder<meta::content> FileFinder;
 
-#define TEST
+// #define TEST
 
 static int test()
 {
     std::vector<std::string> files;
-    file_system::ls_files("./Debug", &files);
+    file_system::ls_files("./Debug/", &files);
 
     return 0;
 }
@@ -190,7 +190,7 @@ int main(int argc, const char* argv[])
             "object",
             "upload",
             "/",
-            "./Debug/kimi.jpg"
+            "./Debug/code-mirror"
         };
 
         const char** argv = _argv;
@@ -226,8 +226,8 @@ int main(int argc, const char* argv[])
         }
         else if(object == "object") {
             socket::endpoint ep;
-            ep.set_ep("120.55.35.17", 80);
-            bucket::bucket bkt(key, "twofei-wordpress", "twofei-wordpress.oss-cn-hangzhou.aliyuncs.com", ep);
+            ep.set_ep("120.77.166.189", 80);
+            bucket::bucket bkt(key, "twofei-test", "twofei-test.oss-cn-shenzhen.aliyuncs.com", ep);
             if(argc >= 2) {
                 auto command = std::string(argv[1]);
                 if(command == "list") {
@@ -330,12 +330,12 @@ int main(int argc, const char* argv[])
 
                         std::string url;
                         url += "http://";
-                        url += "twofei-wordpress.oss-cn-hangzhou.aliyuncs.com";
+                        url += "twofei-test.oss-cn-shenzhen.aliyuncs.com";
 
                         std::map<std::string, std::string> query = {
                             { "OSSAccessKeyId",  key.key()},
                             { "Expires",        expr_str },
-                            { "Signature",      sign_url(key, expiration, std::string("/twofei-wordpress") + file)},
+                            { "Signature",      sign_url(key, expiration, std::string("/twofei-test") + file)},
                         };
 
                         url += strutil::make_uri(file, query);
@@ -474,6 +474,29 @@ int main(int argc, const char* argv[])
                             fis.open(src);
                             std::cout << "Uploading `" << src << "' ...";
                             bkt.put_object(remote_path, fis);
+                            std::cout << std::endl;
+                        }
+                        else if(file_system::is_folder(src)) {
+                            std::vector<std::string> files;
+
+                            if(dst.back() != '/') {
+                                dst += '/';
+                            }
+
+                            file_system::ls_files(src, &files);
+
+                            std::cout << "Summary: " << files.size()
+                                << (files.size() > 1 ? " files" : " file")
+                                << " will be uploaded.\n"
+                                << std::endl;
+
+                            for(const auto& file : files) {
+                                stream::file_istream fis;
+                                fis.open(src + '/' + file);
+                                std::cout << "  Uploading `" << file << "' ...";
+                                bkt.put_object(dst + file, fis);
+                                std::cout << std::endl;
+                            }
                         }
                     }
                 }
