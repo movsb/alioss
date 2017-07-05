@@ -18,20 +18,17 @@ namespace alioss {
             }
         }
 
-        void ls_files_inner(const std::string& _dir, std::vector<std::string>* files, const std::string& prefix)
+        void ls_files_inner(const std::wstring& _dir, std::vector<std::wstring>* files)
         {
             if (_dir.empty() || files == nullptr)
                 return;
 
-            auto dir= normalize_slash(_dir);
-            if(dir.back() != '/') dir += '/';
-
-            auto wdir = strutil::from_utf8(dir);
-            auto wprefix = strutil::from_utf8(prefix);
+            auto dir= _dir;
+            if(dir.back() != L'/') dir += L'/';
 
             WIN32_FIND_DATAW fd;
             HANDLE hfind;
-            if ((hfind = ::FindFirstFileW((wdir + L"*.*").c_str(), &fd)) != INVALID_HANDLE_VALUE) {
+            if ((hfind = ::FindFirstFileW((dir + L"*.*").c_str(), &fd)) != INVALID_HANDLE_VALUE) {
                 do {
                     if (fd.dwFileAttributes & FILE_ATTRIBUTE_ARCHIVE
                         || fd.dwFileAttributes & FILE_ATTRIBUTE_COMPRESSED
@@ -40,7 +37,7 @@ namespace alioss {
                         || fd.dwFileAttributes & FILE_ATTRIBUTE_READONLY
                         )
                     {
-                        files->emplace_back(strutil::to_utf8(wprefix + fd.cFileName));
+                        files->emplace_back(dir + fd.cFileName);
 
                     }
                     else if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
@@ -51,7 +48,7 @@ namespace alioss {
                             )
                             ;
                         if(!filtered) {
-                            ls_files_inner(strutil::to_utf8(wdir + fd.cFileName), files, strutil::to_utf8(wprefix + fd.cFileName + L'/'));
+                            ls_files_inner(dir + fd.cFileName, files);
                         }
                     }
                 } while (::FindNextFileW(hfind, &fd));
@@ -61,7 +58,16 @@ namespace alioss {
 
         void ls_files(const std::string& dir, std::vector<std::string>* files)
         {
-            return ls_files_inner(dir, files, "");
+            auto wdir = strutil::from_utf8(file_system::normalize_slash(dir));
+            std::vector<std::wstring> wfiles;
+
+            ls_files_inner(wdir, &wfiles);
+
+            int prefix_len = dir.size() + (!dir.empty() && dir.back() == '/' ? 0 : 1);
+            for(auto& file : wfiles) {
+                auto f = strutil::to_utf8(file.c_str() + prefix_len);
+                files->emplace_back(std::move(f));
+            }
         }
 
         void normalize_slash(std::string* path)
