@@ -18,12 +18,11 @@ namespace alioss {
             }
         }
 
-        void ls_files_inner(const std::wstring& _dir, std::vector<std::wstring>* files)
+        void ls_files_inner(std::wstring& dir, std::vector<std::wstring>* files)
         {
-            if (_dir.empty() || files == nullptr)
+            if (dir.empty() || files == nullptr)
                 return;
 
-            auto dir= _dir;
             if(dir.back() != L'/') dir += L'/';
 
             WIN32_FIND_DATAW fd;
