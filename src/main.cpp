@@ -103,12 +103,26 @@ struct Finder
 typedef Finder<std::string> FolderFinder;
 typedef Finder<meta::content> FileFinder;
 
+#define TEST
+
+static int test()
+{
+    std::vector<std::string> files;
+    file_system::ls_files("./Debug", &files);
+
+    return 0;
+}
+
 #ifdef _DEBUG
 int main()
 #else
 int main(int argc, const char* argv[])
 #endif // _DEBUG
 {
+#ifdef TEST
+    return test();
+#endif // TEST
+
 #ifdef _WIN32
     SetConsoleCP(CP_UTF8);
     SetConsoleOutputCP(CP_UTF8);

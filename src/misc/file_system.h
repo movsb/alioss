@@ -21,7 +21,7 @@ namespace alioss {
         std::string dirname(const std::string& path);
 
         // Lists files in directory
-        void ls(const std::string& dir, std::vector<std::string>* files);
+        void ls_files(const std::string& dir, std::vector<std::string>* files);
 
         // Returns true if path exists and is a folder
         bool is_folder(const std::string& path);
