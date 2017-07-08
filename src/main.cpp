@@ -24,6 +24,9 @@
 
 using namespace alioss;
 
+#define OSS_BUCKET    "twofei-wordpress"
+#define OSS_LOCATION  "oss-cn-hangzhou"
+
 bool read_access_key(accesskey* key)
 {
 	std::string file;
@@ -139,7 +142,7 @@ int main(int argc, const char* argv[])
 #ifdef _WIN32
 		wsa.init();
 #endif
-		resolver.resolve("oss.aliyuncs.com", "http");
+		resolver.resolve(meta::oss_root_server, "http");
 	}
 	catch (socket::socketexcept& e){
 		socketerror_stderr_dumper(e);
@@ -184,13 +187,12 @@ int main(int argc, const char* argv[])
 		};
 
 #ifdef _DEBUG
-        int argc = 5;
+        int argc = 4;
         const char* _argv[] = {
             "alioss.exe",
             "object",
-            "upload",
+            "list",
             "/",
-            "./Debug/code-mirror"
         };
 
         const char** argv = _argv;
@@ -216,8 +218,8 @@ int main(int argc, const char* argv[])
                             << "Name          : " << bkt.name() << std::endl
                             << "Location      : " << bkt.location() << std::endl
                             << "Creation Date : " << bkt.creation_date() << std::endl
-                            << "End Point     : " << (bkt.location() + ".aliyuncs.com") << std::endl
-                            << "Public Host   : " << (bkt.name() + "." + bkt.location() + ".aliyuncs.com") << std::endl
+                            << "End Point     : " << (bkt.location() + meta::oss_server_suffix) << std::endl
+                            << "Public Host   : " << (bkt.name() + "." + bkt.location() + meta::oss_server_suffix) << std::endl
                             << std::endl
                         ;
                     }
@@ -226,8 +228,10 @@ int main(int argc, const char* argv[])
         }
         else if(object == "object") {
             socket::endpoint ep;
-            ep.set_ep("120.77.166.189", 80);
-            bucket::bucket bkt(key, "twofei-test", "twofei-test.oss-cn-shenzhen.aliyuncs.com", ep);
+            socket::resolver resover;
+            resover.resolve(std::string(OSS_BUCKET) + "." + OSS_LOCATION + meta::oss_server_suffix, "http");
+            ep.set_ep(resover[0], 80);
+            bucket::bucket bkt(key, OSS_BUCKET, OSS_LOCATION, ep);
             if(argc >= 2) {
                 auto command = std::string(argv[1]);
                 if(command == "list") {
@@ -330,12 +334,15 @@ int main(int argc, const char* argv[])
 
                         std::string url;
                         url += "http://";
-                        url += "twofei-test.oss-cn-shenzhen.aliyuncs.com";
+                        url += OSS_BUCKET;
+                        url += ".";
+                        url += OSS_LOCATION;
+                        url += meta::oss_server_suffix;
 
                         std::map<std::string, std::string> query = {
                             { "OSSAccessKeyId",  key.key()},
                             { "Expires",        expr_str },
-                            { "Signature",      sign_url(key, expiration, std::string("/twofei-test") + file)},
+                            { "Signature",      sign_url(key, expiration, std::string("/") + OSS_BUCKET + file)},
                         };
 
                         url += strutil::make_uri(file, query);

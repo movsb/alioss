@@ -48,7 +48,7 @@ bool bucket::_list_objects_internal(const std::string & prefix, const std::strin
     );
 
 	// Host
-	head.add_host(_domain);
+	head.add_host(_host);
 
 	//Date
 	std::string date(gmt_time());
@@ -91,8 +91,7 @@ bool bucket::_list_objects_internal(const std::string & prefix, const std::strin
                 *next_marker = List_bucket_result->FirstChildElement("NextMarker")->FirstChild()->ToText()->Value();
             }
 
-			// Travels All Contents. why name an Object `Contents'? why ain't its container?
-			auto la_get_value = [](tinyxml2::XMLElement* e, const char* name)->const char*{
+			auto la_get_value = [](tinyxml2::XMLElement* e, const char* name) {
 				auto node = e->FirstChildElement(name);
 				return node->FirstChild()->ToText()->Value();
 			};
@@ -224,7 +223,7 @@ bool bucket::delete_object(const std::string& obj)
     head.set_request("DELETE", obj);
 
     // Host
-    head.add_host(_domain);
+    head.add_host(_host);
 
     //Date
     std::string date(gmt_time());
@@ -281,7 +280,7 @@ bool bucket::get_object(const std::string& obj, stream::ostream& os, http::gette
     head.set_request("GET", obj);
 
     // Host
-    head.add_host(_domain);
+    head.add_host(_host);
 
     //Date
     std::string date(gmt_time());
@@ -358,7 +357,7 @@ bool bucket::put_object(const std::string& obj, stream::istream& is, http::putte
         head.add_content_encoding(content_encoding);
 
     // Host
-    head.add_host(_domain);
+    head.add_host(_host);
 
     //Date
     std::string date(gmt_time());
@@ -443,7 +442,7 @@ const http::header::head& bucket::head_object(
     head.set_request("HEAD", obj);
 
     // Host
-    head.add_host(_domain);
+    head.add_host(_host);
 
     //Date
     std::string date(gmt_time());

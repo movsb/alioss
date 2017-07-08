@@ -7,16 +7,8 @@ namespace alioss {
 
 namespace meta {
 
-    const char* const oss_root_server = "oss.ayuncs.com";
-    const char* const oss_server_suffix = ".aliyuncs.com";
-
-	struct oss_data_center_s{
-		const char* name;
-		const char* location;
-	};
-
-	const int oss_data_center_count = 8;
-	extern oss_data_center_s oss_data_center[];
+const char* const oss_root_server = "oss.aliyuncs.com";
+const char* const oss_server_suffix = ".aliyuncs.com";
 
 class owner {
 public:
@@ -102,15 +94,11 @@ public:
 	const std::string& size() const			{ return _size; }
 	const std::string& storage_class() const{ return _storage_class; }
 
-	/// others
 	void set_owner(const char* id, const char* name) {
 		_owner.set_id(id);
 		_owner.set_display_name(name);
 	}
 
-	// here I want to use the name `owner',
-	// but it seems to be ambiguous. So I add
-	// a namespace `meta' as prefix. It works!
 	meta::owner& owner() { return _owner; }
 
 protected:
@@ -121,7 +109,7 @@ protected:
 	std::string		_size;
 	std::string		_storage_class;
 	
-	meta::owner			_owner;
+	meta::owner     _owner;
 
 };
 

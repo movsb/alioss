@@ -21,14 +21,16 @@ public:
 	bucket(
 		const accesskey& key,
 		const std::string& name,
-		const std::string& domain,
+		const std::string& location,
 		const socket::endpoint& ep
 		)
 		: _key(key)
 	{
         _name = name;
-        _domain = domain;
+        _location = location;
 		_endpoint = ep;
+
+        _host = _name + "." + _location + meta::oss_server_suffix;
 	}
 
 	bool connect();
@@ -65,12 +67,6 @@ protected:
 	void _list_objects_loop(const std::string& prefix, bool recursive, std::vector<meta::content>* objects, std::vector<std::string>* folders);
     bool _list_objects_internal(const std::string & prefix, const std::string & marker, bool recursive, std::vector<meta::content>* objects, std::vector<std::string>* folders, std::string * next_marker, std::unordered_set<std::string>* prefixes);
 
-protected: // Request Parameters
-	std::string _delimiter;
-	std::string _marker;
-	std::string _max_keys;
-	std::string _prefix;
-
 protected: // shared objects
 	const accesskey& _key;
 
@@ -78,7 +74,8 @@ protected:
 	http::http _http;
 	socket::endpoint _endpoint;
     std::string _name;
-    std::string _domain;
+    std::string _location;
+    std::string _host;
 };
 
 } // namespace bucket
