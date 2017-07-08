@@ -10,6 +10,11 @@ namespace meta {
 const char* const oss_root_server = "oss.aliyuncs.com";
 const char* const oss_server_suffix = ".aliyuncs.com";
 
+inline std::string make_endpoint(const std::string& bucket_name, const std::string& bucket_location)
+{
+    return bucket_name + '.' + bucket_location + oss_server_suffix;
+}
+
 class owner {
 public:
 	owner() {}

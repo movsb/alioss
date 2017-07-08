@@ -17,13 +17,14 @@ namespace alioss {
 
 namespace service{
 
-class service {
+class service : protected set_endpoint_base
+{
 public:
-	service(const accesskey& key, const socket::endpoint& ep)
+	service(const accesskey& key)
 		: _key(key)
-		, _endpoint(ep)
-	{
-	}
+    {}
+
+    void set_endpoint(const std::string& host);
 
     bool connect();
     bool disconnect();
@@ -35,7 +36,6 @@ protected:
 
 protected:
 	const accesskey&	_key;
-	const socket::endpoint& _endpoint;
 	http::http	_http;
 };
 

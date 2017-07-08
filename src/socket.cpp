@@ -331,4 +331,12 @@ void header::head::dump(std::function<bool(
 
 } // namespace http
 
+
+void set_endpoint_base::set_endpoint(const std::string& host, const std::string& service)
+{
+    socket::resolver resover;
+    resover.resolve(host, service);
+    _ep = resover[0];
+}
+
 } // namespace alioss

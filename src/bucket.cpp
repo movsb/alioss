@@ -21,9 +21,17 @@ namespace alioss{
 
 namespace bucket{
 
+void bucket::set_endpoint(const std::string& bucket_name, const std::string& bucket_location)
+{
+    _name = bucket_name;
+    _location = bucket_location;
+    _host = meta::make_endpoint(bucket_name, bucket_location);
+    set_endpoint_base::set_endpoint(_host, "http");
+}
+
 bool bucket::connect()
 {
-	return _http.connect(_endpoint.ip().c_str(), _endpoint.port());
+	return _http.connect(_ep.ip().c_str(), _ep.port());
 }
 
 bool bucket::disconnect()

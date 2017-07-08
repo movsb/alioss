@@ -16,22 +16,14 @@ namespace alioss {
 
 namespace bucket{
 
-class bucket{
+class bucket : protected set_endpoint_base
+{
 public:
-	bucket(
-		const accesskey& key,
-		const std::string& name,
-		const std::string& location,
-		const socket::endpoint& ep
-		)
+	bucket(const accesskey& key)
 		: _key(key)
-	{
-        _name = name;
-        _location = location;
-		_endpoint = ep;
+	{}
 
-        _host = _name + "." + _location + meta::oss_server_suffix;
-	}
+    void set_endpoint(const std::string& bucket_name, const std::string& bucket_location);
 
 	bool connect();
 	bool disconnect();
@@ -72,7 +64,6 @@ protected: // shared objects
 
 protected:
 	http::http _http;
-	socket::endpoint _endpoint;
     std::string _name;
     std::string _location;
     std::string _host;

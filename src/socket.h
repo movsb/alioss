@@ -147,13 +147,21 @@ public:
 		return _size;
 	}
 
-	std::string operator[](int index) {
+    endpoint operator[](int index) {
 		struct addrinfo* p = _paddr;
 		while (index > 1){
 			p = p->ai_next;
 			index--;
 		}
-		return ::inet_ntoa(((sockaddr_in*)p->ai_addr)->sin_addr);
+
+        auto inaddr = (sockaddr_in*)p->ai_addr;
+        auto ip = (std::string)::inet_ntoa(inaddr->sin_addr);
+        auto port = ::ntohs(inaddr->sin_port);
+
+        endpoint ep;
+        ep.set_ep(ip, port);
+
+        return ep;
 	}
 
 protected:
@@ -202,6 +210,13 @@ protected:
 };
 
 } // namespace socket
+
+struct set_endpoint_base {
+    void set_endpoint(const std::string& host, const std::string& service);
+
+protected:
+    socket::endpoint _ep;
+};
 
 namespace http {
 

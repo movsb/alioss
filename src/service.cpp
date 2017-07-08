@@ -16,8 +16,13 @@ namespace alioss{
 
 namespace service{
 
+void service::set_endpoint(const std::string& host)
+{
+    set_endpoint_base::set_endpoint(host, "http");
+}
+
 bool service::connect() {
-    return _http.connect(_endpoint.ip().c_str(), _endpoint.port());
+    return _http.connect(_ep.ip().c_str(), _ep.port());
 }
 
 bool service::disconnect() {

@@ -136,13 +136,11 @@ int main(int argc, const char* argv[])
 #ifdef _WIN32
 	socket::wsa wsa;
 #endif
-	socket::resolver resolver;
 
 	try{
 #ifdef _WIN32
 		wsa.init();
 #endif
-		resolver.resolve(meta::oss_root_server, "http");
 	}
 	catch (socket::socketexcept& e){
 		socketerror_stderr_dumper(e);
@@ -158,12 +156,7 @@ int main(int argc, const char* argv[])
 		return -1;
 	}
 
-	socket::endpoint ep;
-	ep.set_ep(resolver[0], 80);
-
 	try {
-		service::service svc(key, ep);
-
 		auto la_command_service = [](){
             std::cout << "alioss - a simple Ali OSS manager\n";
             std::cout << "\n";
@@ -187,10 +180,10 @@ int main(int argc, const char* argv[])
 		};
 
 #ifdef _DEBUG
-        int argc = 4;
+        int argc = 3;
         const char* _argv[] = {
             "alioss.exe",
-            "object",
+            "bucket",
             "list",
             "/",
         };
@@ -208,6 +201,10 @@ int main(int argc, const char* argv[])
 
         auto object = std::string(argv[0]);
         if(object == "bucket") {
+            service::service svc(key);
+
+            svc.set_endpoint(meta::oss_root_server);
+
             if(argc >= 2) {
                 auto command = std::string(argv[1]);
                 if(command == "list") {
@@ -227,11 +224,10 @@ int main(int argc, const char* argv[])
             }
         }
         else if(object == "object") {
-            socket::endpoint ep;
-            socket::resolver resover;
-            resover.resolve(std::string(OSS_BUCKET) + "." + OSS_LOCATION + meta::oss_server_suffix, "http");
-            ep.set_ep(resover[0], 80);
-            bucket::bucket bkt(key, OSS_BUCKET, OSS_LOCATION, ep);
+            bucket::bucket bkt(key);
+
+            bkt.set_endpoint(OSS_BUCKET, OSS_LOCATION);
+
             if(argc >= 2) {
                 auto command = std::string(argv[1]);
                 if(command == "list") {
