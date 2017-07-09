@@ -180,10 +180,10 @@ int main(int argc, const char* argv[])
 		};
 
 #ifdef _DEBUG
-        int argc = 3;
+        int argc = 4;
         const char* _argv[] = {
             "alioss.exe",
-            "bucket",
+            "object",
             "list",
             "/",
         };
@@ -215,8 +215,8 @@ int main(int argc, const char* argv[])
                             << "Name          : " << bkt.name() << std::endl
                             << "Location      : " << bkt.location() << std::endl
                             << "Creation Date : " << bkt.creation_date() << std::endl
-                            << "End Point     : " << (bkt.location() + meta::oss_server_suffix) << std::endl
-                            << "Public Host   : " << (bkt.name() + "." + bkt.location() + meta::oss_server_suffix) << std::endl
+                            << "End Point     : " << meta::make_endpoint(bkt.location()) << std::endl
+                            << "Public Host   : " << meta::make_public_host(bkt.name(), bkt.location()) << std::endl
                             << std::endl
                         ;
                     }
@@ -330,10 +330,7 @@ int main(int argc, const char* argv[])
 
                         std::string url;
                         url += "http://";
-                        url += OSS_BUCKET;
-                        url += ".";
-                        url += OSS_LOCATION;
-                        url += meta::oss_server_suffix;
+                        url += meta::make_public_host(OSS_BUCKET, OSS_LOCATION);
 
                         std::map<std::string, std::string> query = {
                             { "OSSAccessKeyId",  key.key()},

@@ -25,7 +25,7 @@ void bucket::set_endpoint(const std::string& bucket_name, const std::string& buc
 {
     _name = bucket_name;
     _location = bucket_location;
-    _host = meta::make_endpoint(bucket_name, bucket_location);
+    _host = meta::make_public_host(bucket_name, bucket_location);
     set_endpoint_base::set_endpoint(_host, "http");
 }
 
