@@ -24,8 +24,8 @@
 
 using namespace alioss;
 
-#define OSS_BUCKET    "twofei-wordpress"
-#define OSS_LOCATION  "oss-cn-hangzhou"
+#define OSS_BUCKET    "twofei-test"
+#define OSS_LOCATION  "oss-cn-shenzhen"
 
 bool read_access_key(accesskey* key)
 {
@@ -110,9 +110,6 @@ typedef Finder<meta::content> FileFinder;
 
 static int test()
 {
-    std::vector<std::string> files;
-    file_system::ls_files("./Debug/", &files);
-
     return 0;
 }
 
@@ -180,12 +177,13 @@ int main(int argc, const char* argv[])
 		};
 
 #ifdef _DEBUG
-        int argc = 4;
+        int argc = 5;
         const char* _argv[] = {
             "alioss.exe",
             "object",
-            "list",
+            "upload",
             "/",
+            "./Debug/code-mirror",
         };
 
         const char** argv = _argv;

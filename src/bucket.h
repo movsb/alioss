@@ -39,10 +39,7 @@ public:
 	bool put_object(
         const std::string& obj,
         stream::istream& is,
-        http::putter putter = nullptr,
-        const char* content_type="",
-        const char* content_disposition="",
-        const char* content_encoding=""
+        http::putter putter = nullptr
     );
 
 	bool create_folder(const std::string& name);

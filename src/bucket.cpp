@@ -6,13 +6,15 @@
 
 #include <tinyxml2/tinyxml2.h>
 
+#include "socket.h" // put here to fix winsock2 include problem
+
 #include "crypto/crypto.h"
 #include "misc/time.h"
 #include "misc/stream.h"
 #include "misc/strutil.h"
+#include "misc/file_system.h"
 
 #include "sign.h"
-#include "socket.h"
 #include "ossmeta.h"
 #include "osserror.h"
 #include "bucket.h"
@@ -344,9 +346,7 @@ bool bucket::get_object(const std::string& obj, stream::ostream& os, http::gette
     }
 }
 
-bool bucket::put_object(const std::string& obj, stream::istream& is, http::putter putter,
-    const char* content_type/*=""*/, const char* content_disposition/*=""*/, 
-    const char* content_encoding/*=""*/)
+bool bucket::put_object(const std::string& obj, stream::istream& is, http::putter putter)
 {
     //---------------------------- Requesting----------------------------------
     auto& head = _http.head();
@@ -355,14 +355,11 @@ bool bucket::put_object(const std::string& obj, stream::istream& is, http::putte
     // Verb
     head.set_request("PUT", obj);
 
-    // Content-Length & Content-Type && Content-Disposition && Content-Encoding
     head.add_content_length(is.size());
-    if (!content_type || !*content_type) content_type = "text/json";
-    head.add_content_type(content_type);
-    if (content_disposition && *content_disposition)
-        head.add_content_disposition(content_disposition);
-    if (content_encoding && *content_encoding)
-        head.add_content_encoding(content_encoding);
+
+    // MIME type
+    auto mime = file_system::mime(file_system::ext_name(obj));
+    head.add_content_type(mime);
 
     // Host
     head.add_host(_host);
@@ -372,7 +369,7 @@ bool bucket::put_object(const std::string& obj, stream::istream& is, http::putte
     head.add_date(date.c_str());
 
     // Authorization
-    head.add_authorization(sign_head(_key, "PUT", "", content_type, date, '/' + _name + obj));
+    head.add_authorization(sign_head(_key, "PUT", "", mime, date, '/' + _name + obj));
 
     // Connection
     head.add_connection("close");

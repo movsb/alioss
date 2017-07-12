@@ -26,11 +26,19 @@ namespace alioss {
         // Returns true if path exists and is a folder
         bool is_folder(const std::string& path);
 
+        // Returns true if path exists and is a file
         bool is_file(const std::string& path);
 
         // Gets the basename component of the file
         std::string basename(const std::string& file);
 
+        // Creates directories recursively
         bool mkdir(const std::string& path);
+
+        // Gets the extension name of a file
+        std::string ext_name(const std::string& file);
+
+        // Gets the MIME type of an extension (exts are NOT case sensitive)
+        std::string mime(const std::string& ext, const std::string& def = "octet/stream");
     }
 }

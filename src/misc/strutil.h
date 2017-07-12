@@ -14,6 +14,7 @@ Desc	: String manipulation
 #include <unordered_set>
 #include <codecvt>
 #include <memory>
+#include <algorithm>
 
 namespace alioss{
 namespace strutil{
@@ -39,6 +40,18 @@ std::string encode_uri(const std::string& s);
 std::string encode_uri_component(const std::string& s);
 
 std::string make_uri(const std::string& resource, const std::map<std::string, std::string>& query);
+
+inline void to_lower(std::string* s)
+{
+    std::transform(s->cbegin(), s->cend(), s->begin(), ::tolower);
+}
+
+inline std::string to_lower(const std::string& s)
+{
+    auto ds = s;
+    to_lower(&ds);
+    return ds;
+}
 
 }
 }

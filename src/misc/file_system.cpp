@@ -18,7 +18,7 @@ namespace alioss {
             }
         }
 
-        void ls_files_inner(std::wstring& dir, std::vector<std::wstring>* files)
+        void ls_files_impl(std::wstring& dir, std::vector<std::wstring>* files)
         {
             if (dir.empty() || files == nullptr)
                 return;
@@ -47,7 +47,7 @@ namespace alioss {
                             )
                             ;
                         if(!filtered) {
-                            ls_files_inner(dir + fd.cFileName, files);
+                            ls_files_impl(dir + fd.cFileName, files);
                         }
                     }
                 } while (::FindNextFileW(hfind, &fd));
@@ -60,7 +60,7 @@ namespace alioss {
             auto wdir = strutil::from_utf8(file_system::normalize_slash(dir));
             std::vector<std::wstring> wfiles;
 
-            ls_files_inner(wdir, &wfiles);
+            ls_files_impl(wdir, &wfiles);
 
             int prefix_len = dir.size() + (!dir.empty() && dir.back() == '/' ? 0 : 1);
             for(auto& file : wfiles) {
@@ -131,6 +131,118 @@ namespace alioss {
             }
 
             return true;
+        }
+
+
+        std::string ext_name(const std::string& file)
+        {
+            std::string ext;
+
+            auto pd = file.rfind('.');
+
+            // must have a period
+            if(pd != file.npos) {
+                // must not be the last char
+                if(pd != file.size() - 1) {
+                    // must not be the first char after an optional (back)slash char
+                    auto ps = file.find_last_of("/\\");
+                    if(ps == file.npos && pd > 0 || ps != file.npos && pd > ps + 1) {
+                        ext = file.substr(pd);
+                    }
+                }
+            }
+
+            return ext;
+        }
+
+        std::string mime(const std::string& ext, const std::string& def /*= "octet/stream"*/)
+        {
+            struct Index {
+                enum Value {
+                    Binary,
+
+                    Plain,
+
+                    XML,
+                    HTML,
+                    CSS,
+                    Javascript,
+                    JSON,
+
+                    GIF,
+                    JPEG,
+                    PNG,
+
+                    PDF,
+                    DOC,
+                    XLS,
+                    PPT,
+
+                    _END,
+                };
+            };
+
+            typedef Index _;
+
+            static const char* _known_mimes[Index::_END];
+            {
+                static bool _inited = false;
+                if(!_inited) {
+                    _inited = true;
+
+                    auto& m = _known_mimes;
+
+                    m[_::Binary]        = "octet/stream"                    ;
+
+                    m[_::Plain]         = "text/plain"                      ;
+
+                    m[_::XML]           = "text/xml"                        ;
+                    m[_::HTML]          = "text/html"                       ;
+                    m[_::CSS]           = "text/css"                        ;
+                    m[_::Javascript]    = "text/javascript"                 ;
+                    m[_::JSON]          = "text/json"                       ;
+
+                    m[_::GIF]           = "image/gif"                       ;
+                    m[_::JPEG]          = "image/jpeg"                      ;
+                    m[_::PNG]           = "image/png"                       ;
+
+                    m[_::PDF]           = "application/pdf"                 ;
+                    m[_::DOC]           = "application/msword"              ;
+                    m[_::XLS]           = "application/vnd.ms-excel"        ;
+                    m[_::PPT]           = "application/vnd.ms-powerpoint"   ;
+                }
+
+            }
+
+            static const std::map<std::string, int> _known_types = {
+                {".txt",   _::Plain},
+
+                {".xml",    _::XML},
+                {".html",   _::HTML},
+                {".css",    _::CSS},
+                {".js",     _::Javascript},
+                {".json",   _::JSON},
+
+                {".gif",    _::GIF},
+                {".jpg",    _::JPEG},
+                {".jpeg",   _::JPEG},
+                {".png",    _::PNG},
+
+                {".pdf",    _::PDF},
+                {".doc",    _::DOC},
+                {".docx",   _::DOC},
+                {".xls",    _::XLS},
+                {".xlss",   _::XLS},
+                {".ppt",    _::PPT},
+                {".pptx",   _::PPT},
+            };
+
+            auto it = _known_types.find(strutil::to_lower(ext));
+            if(it == _known_types.cend()) {
+                return def;
+            }
+
+            return _known_mimes[it->second];
         }
 
     }
