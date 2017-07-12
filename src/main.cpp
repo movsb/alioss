@@ -6,7 +6,7 @@
 #include <iostream>
 #include <fstream>
 #include <functional>
-#include <regex>
+#include <memory>
 
 #ifdef _WIN32
 #include <direct.h>
@@ -113,11 +113,7 @@ static int test()
     return 0;
 }
 
-#ifdef _DEBUG
-int main()
-#else
-int main(int argc, const char* argv[])
-#endif // _DEBUG
+static int __main(int argc, const char* argv[])
 {
 #ifdef TEST
     return test();
@@ -175,19 +171,6 @@ int main(int argc, const char* argv[])
                 << "\n"
 				;
 		};
-
-#ifdef _DEBUG
-        int argc = 5;
-        const char* _argv[] = {
-            "alioss.exe",
-            "object",
-            "upload",
-            "/",
-            "./Debug/code-mirror",
-        };
-
-        const char** argv = _argv;
-#endif // _DEBUG
 
         if(argc < 2) {
             la_command_service();
@@ -517,3 +500,19 @@ int main(int argc, const char* argv[])
 	return 0;
 }
 
+#ifdef _WIN32
+int wmain(int argc, const wchar_t* _argv[])
+{
+    auto sarr = std::make_unique<std::string[]>(argc);
+    auto argv = std::make_unique<const char*[]>(argc + 1);
+
+    for(int i = 0; i < argc; i++) {
+        sarr[i] = strutil::to_utf8(_argv[i]);
+        argv[i] = sarr[i].c_str();
+    }
+
+    argv[argc] = nullptr;
+
+    return __main(argc, argv.get());
+}
+#endif
