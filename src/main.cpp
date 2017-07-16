@@ -65,46 +65,20 @@ bool read_access_key(accesskey* key)
 	return true;
 }
 
-template<typename Element>
-struct Finder
+
+static bool find_file(const std::vector<meta::content>& files, const std::string& needle)
 {
-    template<typename T, typename R = std::string>
-    struct ElementGetter
-    {
-        const R& operator()(const T& t)
-        {
-            return t;
-        }
-    };
+    return std::find_if(files.cbegin(), files.cend(), [&needle](const meta::content& file) {
+        return file.key() == needle;
+    }) != files.cend();
+}
 
-    template<>
-    struct ElementGetter<meta::content>
-    {
-        const std::string& operator()(const meta::content& file)
-        {
-            return file.key();
-        }
-    };
-
-    typedef std::vector<Element> Container;
-    typedef ElementGetter<Element> Getter;
-
-    const Container&_con;
-
-    Finder(const Container& con)
-        : _con(con)
-    {}
-
-    bool operator()(const std::string& subject, bool case_sensitive)
-    {
-        return std::find_if(_con.cbegin(), _con.cend(), [&subject, &case_sensitive](const Element& search){
-            return (case_sensitive ? strcmp : _stricmp)(subject.c_str(), Getter()(search).c_str()) == 0;
-        }) != _con.cend();
-    }
-};
-
-typedef Finder<std::string> FolderFinder;
-typedef Finder<meta::content> FileFinder;
+static bool find_folder(const std::vector<std::string>& folders, const std::string& needle)
+{
+    return std::find_if(folders.cbegin(), folders.cend(), [&needle](const std::string& folder) {
+        return folder == needle;
+    }) != folders.cend();
+}
 
 // #define TEST
 
@@ -249,7 +223,7 @@ static int __main(int argc, const char* argv[])
                         });
                     }
                 }
-                else if (command == "sign") {
+                else if(command == "sign") {
                     if (argc >= 4) {
                         auto file = argv[2];
 
@@ -326,39 +300,37 @@ static int __main(int argc, const char* argv[])
                 }
                 else if(command == "download") {
                     if(argc >= 3) {
-                        auto remote_path = file_system::normalize_slash(argv[2]);
+                        auto input_path = file_system::normalize_slash(argv[2]);
+                        auto input_dir = file_system::dirname(input_path);
+
+                        if(input_dir.empty()) input_dir = '/';
 
                         std::vector<meta::content> files;
                         std::vector<std::string> folders;
-                        bkt.list_objects(remote_path, &files, &folders);
 
-                        bool is_download_file = remote_path.back() != '/';
+                        bkt.list_objects(input_dir, false, &files, &folders);
 
-                        if (is_download_file) {
-                            auto has_file = FileFinder(files)(remote_path, false);
-                            if (!has_file) {
-                                has_file = FileFinder(files)(remote_path, true);
-                                if (!has_file) {
-                                    is_download_file = false;
-                                }
-                            }
+                        bool is_download_file = input_path.back() != '/';
+
+                        if (is_download_file && !find_file(files, input_path)) {
+                            is_download_file = false;
                         }
 
                         if (!is_download_file) {
-                            auto remote_path2 = remote_path.back() == '/' ? remote_path : remote_path + '/';
-                            auto has_dir = remote_path2 == "/" || FolderFinder(folders)(remote_path2, false);
+                            auto input_path2 = input_path.back() == '/' ? input_path : input_path + '/';
+                            auto has_dir = input_path2 == "/" || find_folder(folders, input_path2);
                             if (!has_dir) {
-                                has_dir = FolderFinder(folders)(remote_path2, true);
-                                if (!has_dir) {
-                                    std::cerr << "No such file or folder: " << remote_path << std::endl;
-                                    return 1;
-                                }
+                                std::cerr << "No such file or folder: " << input_path << std::endl;
+                                return 1;
+                            }
+                            else {
+                                input_dir = input_path2;
                             }
                         }
 
                         if (is_download_file) {
                             auto local_dir = std::string(".");
-                            auto local_name = file_system::basename(remote_path);
+                            auto local_name = file_system::basename(input_path);
 
                             if (argc >= 4) {
                                 auto str = file_system::normalize_slash(argv[3]);
@@ -379,8 +351,8 @@ static int __main(int argc, const char* argv[])
                             stream::file_ostream fos;
                             fos.open(local_dir + '/' + local_name);
 
-                            std::cout << "Downloading " << remote_path << " ..." << std::endl;
-                            bkt.get_object(remote_path, fos);
+                            std::cout << "Downloading `" << input_path << "' ..." << std::endl;
+                            bkt.get_object(input_path, fos);
                         }
                         else {
                             auto local_dir = std::string(".");
@@ -388,7 +360,7 @@ static int __main(int argc, const char* argv[])
                             if (argc >= 4) {
                                 auto str = file_system::normalize_slash(argv[3]);
                                 if (file_system::is_file(str)) {
-                                    std::cerr << str << " exists, and is a folder." << std::endl;
+                                    std::cerr << str << " exists, and is a file, aborting." << std::endl;
                                     return 1;
                                 }
                                 local_dir = str;
@@ -400,9 +372,9 @@ static int __main(int argc, const char* argv[])
                             std::vector<meta::content> files;
                             std::vector<std::string> folders;
 
-                            bkt.list_objects(remote_path, true, &files, &folders);
+                            bkt.list_objects(input_dir, true, &files, &folders);
 
-                            auto prefix = remote_path.back() == '/' ? remote_path : remote_path + '/';
+                            auto prefix = input_dir.back() == '/' ? input_dir : input_dir + '/';
 
                             for (const auto& f : folders) {
                                 auto path = local_dir + '/' + (f.c_str() + prefix.size());
@@ -420,7 +392,7 @@ static int __main(int argc, const char* argv[])
 
                     }
                 }
-                else if (command == "upload") {
+                else if(command == "upload") {
                     if (argc >= 4) {
                         auto dst = file_system::normalize_slash(argv[2]);
                         if (dst[0] != '/')  {
