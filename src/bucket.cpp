@@ -191,7 +191,6 @@ void bucket::_list_objects_loop(const std::string & prefix, bool recursive, std:
     }
 
     if(recursive) {
-        prefixes.erase("/");
         for(auto& f : std::move(prefixes)) {
             folders->emplace_back(std::move(f));
         }
@@ -223,8 +222,12 @@ void bucket::list_objects(const std::string& folder, bool recursive, std::vector
     return _list_objects_loop(prefix, recursive, objects, folders);
 }
 
-bool bucket::delete_object(const std::string& obj)
+void bucket::delete_object(const std::string& obj)
 {
+    if(obj.empty() || obj[0] != '/') {
+        throw ossexcept(ossexcept::kInvalidPath);
+    }
+
     auto& head = _http.head();
     head.clear();
 
@@ -259,14 +262,13 @@ bool bucket::delete_object(const std::string& obj)
 
     /*----------------------------------------------------
     ErrorCode:
-    0. 200 OK
     1. 204 No Content ---> Success
     2. 404 Not found ---> BucketNotFound
     3. 403 Forbidden
     ----------------------------------------------------*/
     auto& status = head.get_status();
-    if (status == "200" || status=="204") {
-        return true;
+    if(status == "204") {
+
     }
     else if (status == "404"){
         // TODO
@@ -276,8 +278,6 @@ bool bucket::delete_object(const std::string& obj)
     else{
         throw ossexcept(ossexcept::ecode(atoi(status.c_str())), head.get_status_n_comment().c_str(), __FUNCTION__);
     }
-
-    return true;
 }
 
 bool bucket::get_object(const std::string& obj, stream::ostream& os, http::getter getter, const std::string& range/*=""*/, const std::string& unmodified_since/*=""*/)

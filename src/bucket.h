@@ -34,7 +34,7 @@ public:
     bool get_object(const std::string& obj, stream::ostream& os, http::getter getter = nullptr,
 		const std::string& range="", const std::string& unmodified_since="");
 
-	bool delete_object(const std::string& obj);
+	void delete_object(const std::string& obj);
 
 	bool put_object(
         const std::string& obj,

@@ -134,14 +134,16 @@ static int __main(int argc, const char* argv[])
                 << "\n"
                 << "    object   list         <directory>\n"
                 << "    object   head         <file>\n"
-                << "    object   sign         <file>          <expiration>\n"
+                << "    object   sign         <file>              <expiration>\n"
                 << "\n"
-                << "    object   download     <file>          [file/directory]\n"
-                << "    object   download     <directory>     [directory]\n"
+                << "    object   download     <file>              [file/directory]\n"
+                << "    object   download     <directory>         [directory]\n"
                 << "\n"
-                << "    object   upload       <file>          <file>\n"
-                << "    object   upload       <directory>     <file>\n"
-                << "    object   upload       <directory>     <directory>\n"
+                << "    object   upload       <file>              <file>\n"
+                << "    object   upload       <directory>         <file>\n"
+                << "    object   upload       <directory>         <directory>\n"
+                << "\n"
+                << "    object   delete       <file/directory>\n"
                 << "\n"
 				;
 		};
@@ -451,6 +453,43 @@ static int __main(int argc, const char* argv[])
                                 std::cout << std::endl;
                             }
                         }
+                    }
+                }
+                else if(command == "delete") {
+                    if(argc >= 3) {
+                        auto spec = file_system::normalize_slash(argv[2]);
+                        std::vector<meta::content> files;
+                        std::vector<std::string> folders;
+
+                        bkt.list_objects(spec, &files, &folders);
+
+                        if(find_file(files, spec)) {
+                            bkt.delete_object(spec);
+                            std::cout << "Deleted." << std::endl;
+                            return  0;
+                        }
+
+                        auto spec_back = spec;
+                        if(spec.back() != '/') spec += '/';
+
+                        if(find_folder(folders, spec)) {
+                            for(const auto& file : files) {
+                                if(std::strncmp(file.key().c_str(), spec.c_str(), spec.size()) == 0) {
+                                    std::cout << "Deleting `" << file.key() << "' ...";
+                                    bkt.delete_object(file.key());
+                                    std::cout << " Done." << std::endl;
+                                }
+                            }
+
+                            std::cout << "Deleting `" << spec << "' ...";
+                            bkt.delete_object(spec);
+                            std::cout << " Done." << std::endl;
+
+                            return 0;
+                        }
+
+                        std::cerr << "No such file or directory: `" << spec_back << "'." << std::endl;
+                        return -1;
                     }
                 }
             }
