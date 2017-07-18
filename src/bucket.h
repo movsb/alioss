@@ -42,15 +42,7 @@ public:
         http::putter putter = nullptr
     );
 
-	bool create_folder(const std::string& name);
-
-	const http::header::head& head_object(
-		const std::string& obj,
-		const char* if_modified_since = nullptr,
-		const char* if_unmodified_since = nullptr,
-		const char* if_match = nullptr,
-		const char* if_none_match = nullptr
-    );
+	const http::header::head& head_object(const std::string& obj);
 
 protected:
 	void _list_objects_loop(const std::string& prefix, bool recursive, std::vector<meta::content>* objects, std::vector<std::string>* folders);

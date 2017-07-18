@@ -407,38 +407,7 @@ bool bucket::put_object(const std::string& obj, stream::istream& is, http::putte
     }
 }
 
-bool bucket::create_folder(const std::string& name)
-{
-    class empty_istream : public stream::istream
-    {
-    public:
-        virtual int size() const{
-            return 0;
-        }
-        virtual int read_some(unsigned char* buf, int sz){
-            return 0;
-        }
-    };
-
-    try{
-        empty_istream is;
-        put_object(name, is);
-        return true;
-    }
-    catch (ossexcept& e){
-        e.push_stack(__FUNCTION__);
-        throw;
-    }
-
-    return true;
-}
-
-const http::header::head& bucket::head_object(
-    const std::string& obj,
-    const char* if_modified_since /*= nullptr*/,
-    const char* if_unmodified_since /*= nullptr*/,
-    const char* if_match /*= nullptr*/,
-    const char* if_none_match /*= nullptr */)
+const http::header::head& bucket::head_object(const std::string& obj)
 {
     auto& head = _http.head();
     head.clear();
@@ -457,30 +426,12 @@ const http::header::head& bucket::head_object(
     head.add_authorization(sign_head(_key, "HEAD", date, '/' + _name + obj));
 
     // Connection
-    head.add_connection("close");
+    // head.add_connection("close");
 
-    // Queries.
-    struct{ const char* h; http::header::FIELD f; } a[] = {
-            { if_modified_since, http::header::kIfModifiedSince },
-            { if_unmodified_since, http::header::kIfUnmodifiedSince },
-            { if_match, http::header::kIfMatch },
-            { if_none_match, http::header::kIfNoneMatch },
-    };
-    for (auto& oa : a){
-        if (oa.h && *oa.h)
-            head.add(oa.f, oa.h);
-    }
-
-    try{
-        connect();
-        _http.put_head();
-        _http.get_head();
-        disconnect();
-    }
-    catch (socket::socketexcept& e){
-        e.push_stack(__FUNCTION__);
-        throw;
-    }
+    connect();
+    _http.put_head();
+    _http.get_head();
+    disconnect();
 
     if (head.get_status() == "200")
         return _http.head();
