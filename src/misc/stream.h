@@ -97,6 +97,29 @@ namespace stream{
         std::ifstream _filestm;
     };
 
+    class string_ostream : public stream::ostream
+    {
+    public:
+        virtual int size() const override {
+            return static_cast<int>(_buffer.size());
+        }
+
+        virtual int write_some(const unsigned char* buf, int sz) override
+        {
+            _buffer += std::string((char*)buf, sz);
+            return sz;
+        }
+
+    public:
+        const std::string& ref() const
+        {
+            return _buffer;
+        }
+
+    protected:
+        std::string _buffer;
+    };
+
 } // namespace stream
 
 } // namespace alioss

@@ -34,8 +34,6 @@ inline std::string to_utf8(const std::wstring& s)
     return U8U16Cvt().to_bytes(s);
 }
 
-std::string to_utf8(const std::string& s);
-
 std::string encode_uri(const std::string& s);
 std::string encode_uri_component(const std::string& s);
 

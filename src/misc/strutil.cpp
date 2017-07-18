@@ -53,24 +53,6 @@ namespace alioss{
 			}
 		}
 
-        std::string to_utf8(const std::string& s)
-        {
-            std::string ret;
-
-#ifdef _WIN32
-            int cch = ::MultiByteToWideChar(CP_ACP, 0, s.c_str(), -1, nullptr, 0);
-            if(cch > 0) {
-                auto ws = std::make_unique<wchar_t[]>(cch);
-                if(::MultiByteToWideChar(CP_ACP, 0, s.c_str(), -1, ws.get(), cch) > 0) {
-                    ret = to_utf8(ws.get());
-                }
-            }
-#else
-            assert(0);
-#endif
-            return ret;
-        }
-
         // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURI
         // encodeURI escapes all characters except:
         //      A-Z a-z 0-9 ; , / ? : @ & = + $ - _ . ! ~ * ' ( ) #

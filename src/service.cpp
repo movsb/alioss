@@ -57,7 +57,7 @@ void service::list_buckets(std::vector<meta::bucket>* buckets)
 
 	_http.get_head();
 
-	http::str_body_ostream bs;
+	stream::string_ostream bs;
 	_http.get_body(bs);
 
     disconnect();
@@ -65,8 +65,8 @@ void service::list_buckets(std::vector<meta::bucket>* buckets)
 	auto& status = head.get_status();
 	if (status == "200") {
 		tinyxml2::XMLDocument xmldoc;
-		if (xmldoc.Parse((char*)bs.data(), bs.size()) != tinyxml2::XMLError::XML_SUCCESS)
-			throw ossexcept(ossexcept::kXmlError, "Xml not well-formed", __FUNCTION__);
+		if (xmldoc.Parse(bs.ref().c_str(), bs.size()) != tinyxml2::XMLError::XML_SUCCESS)
+			throw "Invalid XML";
 
 		auto buckets_result = xmldoc.FirstChildElement("ListAllMyBucketsResult");
 
@@ -90,8 +90,7 @@ void service::list_buckets(std::vector<meta::bucket>* buckets)
 		}
 	}
 	else{
-		auto oe = new osserr(bs.data(), bs.size());
-		throw ossexcept(ossexcept::kNotSpecified, head.get_status_n_comment().c_str(), __FUNCTION__, oe);
+        throw osserr::handle(head, bs.ref());
 	}
 }
 

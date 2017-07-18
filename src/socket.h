@@ -333,11 +333,11 @@ public:
 		return _comment;
 	}
 
-	const std::string& get_status() {
+	const std::string& get_status() const {
 		return _status;
 	}
 
-	std::string get_status_n_comment() {
+	std::string get_status_n_comment() const {
 		return _status + " " + _comment;
 	}
 
@@ -485,27 +485,6 @@ public:
 
 protected:
 	header::head _head;	
-};
-
-class str_body_ostream : public stream::ostream {
-public:
-	virtual int size() const override {
-		return static_cast<int>(_buffer.size());
-	}
-
-	virtual int write_some(const unsigned char* buf, int sz) override
-	{
-		_buffer += std::string((char*)buf, sz);
-		return sz;
-	}
-
-public:
-	unsigned char* data() {
-		return (unsigned char*)_buffer.c_str();
-	}
-
-protected:
-	std::string _buffer;
 };
 
 } // namespace http

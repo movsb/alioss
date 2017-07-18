@@ -6,76 +6,23 @@
 
 namespace alioss {
 
-void osserr::parse(const char* xml, int size)
+osserr osserr::handle(const http::header::head & head, const std::string & body)
 {
-	tinyxml2::XMLDocument xmldoc;
-	if (xmldoc.Parse(xml, size) == tinyxml2::XMLError::XML_SUCCESS){
-		parse(&xmldoc);
-	}
+    // Not an error.
+    if(head.get_status()[0] == '2') {
+        return {};
+    }
+
+    return osserr(head.get_status_n_comment(), body);
 }
 
-void osserr::parse(void* d)
+std::ostream & operator<<(std::ostream & os, const osserr& e)
 {
-	auto doc = reinterpret_cast<tinyxml2::XMLDocument*>(d);
-
-	if (doc->Error()) return;
-
-	auto node_error = doc->FirstChildElement("Error");
-
-	// All Standard nodes are parsed firstly and removed
-	auto lagetfield = [&](const char* field)->std::string{
-		auto nodeele = node_error->FirstChildElement(field);
-		auto str = std::string(nodeele->FirstChild()->ToText()->Value());
-		node_error->DeleteChild(nodeele);
-		return str;
-	};
-
-	_code = lagetfield("Code");
-	_msg = lagetfield("Message");
-	_req_id = lagetfield("RequestId");
-	_host_id = lagetfield("HostId");
-
-	// Cycle through all others nodes to
-	// the custom-defined node_handler
-
-	for (auto node = node_error->FirstChild();
-		node != nullptr;
-		node = node->NextSibling())
-	{
-		node_handler(node);
-	}
+    os << "HEAD: \n" << e._head << std::endl;
+    if(!e._body.empty()) {
+        os << "BODY:\n" << e._body << std::endl;
+    }
+    return os;
 }
-
-void osserr::node_handler(void* n)
-{
-	// nothing to do
-}
-
-void osserr::dump(std::function<void(const std::string&)> dumper)
-{
-	dumper(std::string("Code     : ") + code());
-	dumper(std::string("Message  : ") + msg());
-	dumper(std::string("HostId   : ") + host_id());
-	dumper(std::string("RequestId: ") + req_id());
-}
-
-
-void ossexcept_stderr_dumper(ossexcept& e){
-	std::cerr << "\n";
-	std::cerr << "-->Dumping osserr:\n";
-	e.dump_osserr([](const std::string& s){
-		std::cerr << "    " << s << std::endl;
-	});
-
-	std::cerr << "-->ExceptionCode: \n    " << (int)e.code() << std::endl;
-	std::cerr << "-->ExceptionMsg : \n    " << e.what() << std::endl;
-
-	std::cerr << "-->Dumping exception stack:\n";
-	e.dump_stack([&](int i, const std::string& stk){
-		std::cerr << "    " << i << ": " << stk << std::endl;
-	});
-}
-
-
 
 } // namespace alioss

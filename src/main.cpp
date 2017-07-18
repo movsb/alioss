@@ -495,17 +495,22 @@ static int __main(int argc, const char* argv[])
             }
         }
 	}
-	catch (ossexcept& e){
-		e.push_stack(__FUNCTION__);
-		ossexcept_stderr_dumper(e);
+	catch (osserr& e){
+        std::cerr << e << std::endl;
 		return -1;
 	}
 	catch (socket::socketexcept& e){
 		e.push_stack(__FUNCTION__);
 		socketerror_stderr_dumper(e);
+        return -1;
 	}
+    catch(const char* e) {
+        std::cerr << e << std::endl;
+        return -1;
+    }
 	catch (...){
 		std::cerr << "Fatal error: unhandled exception occurred!\n";
+        return -1;
 	}
 
 	return 0;

@@ -75,25 +75,17 @@ bool bucket::_list_objects_internal(const std::string & prefix, const std::strin
 	_http.put_head();
 
 	//-------------------------------------Response--------------------------------
-	http::str_body_ostream bs;
+    stream::string_ostream bs;
 
 	_http.get_head();
 	_http.get_body(bs);
 
 	disconnect();
 
-	/*----------------------------------------------------
-	ErrorCode:
-	1. 204 OK
-	2. 404 Not found, NoSuchBucket
-	3. 400 Bad Request
-	4. 403 Forbidden
-	----------------------------------------------------*/
 	auto& status = head.get_status();
 	if (status == "200") {
 		tinyxml2::XMLDocument doc;
-		if (doc.Parse((char*)bs.data(), bs.size()) == tinyxml2::XMLError::XML_SUCCESS){
-			// TODO: UTF-8 convert (Windows)
+		if (doc.Parse(bs.ref().c_str(), bs.size()) == tinyxml2::XMLError::XML_SUCCESS){
 			auto List_bucket_result = doc.FirstChildElement("ListBucketResult");
 			
             auto is_truncated = List_bucket_result->FirstChildElement("IsTruncated")->FirstChild()->ToText()->Value() == std::string("true");
@@ -160,22 +152,9 @@ bool bucket::_list_objects_internal(const std::string & prefix, const std::strin
 
             return is_truncated == false;
 		}
-        else {
-			throw ossexcept(ossexcept::kXmlError, "fatal: xml not well-formed", __FUNCTION__);
-        }
 	}
 
-	tinyxml2::XMLDocument doc;
-	if (doc.Parse((char*)bs.data(), bs.size()) == tinyxml2::XMLError::XML_SUCCESS){
-		std::string ec(doc.FirstChildElement("Error")->FirstChildElement("Code")->FirstChild()->ToText()->Value());
-		if (ec == "NoSuchBucket" || ec == "AccessDenied" || ec == "InvalidArgument"){
-			throw ossexcept(ossexcept::kNotSpecified, head.get_status_n_comment().c_str(), __FUNCTION__, NULL);
-		}
-		throw ossexcept(ossexcept::kUnhandled, "fatal: unhandled exception!", __FUNCTION__);
-	}
-	else{
-		throw ossexcept(ossexcept::kXmlError,"fatal: xml not well-formed", __FUNCTION__);
-	}
+    throw osserr::handle(head, bs.ref());
 }
 
 void bucket::_list_objects_loop(const std::string & prefix, bool recursive, std::vector<meta::content>* objects, std::vector<std::string>* folders)
@@ -200,7 +179,7 @@ void bucket::_list_objects_loop(const std::string & prefix, bool recursive, std:
 void bucket::list_objects(const std::string& prefix, std::vector<meta::content>* objects, std::vector<std::string>* folders)
 {
     if (prefix.empty() || prefix[0] != '/') {
-        throw ossexcept(ossexcept::kInvalidPath);
+        throw "Invalid path.";
     }
 
     return _list_objects_loop(prefix.substr(1), true, objects, folders);
@@ -210,7 +189,7 @@ void bucket::list_objects(const std::string& prefix, std::vector<meta::content>*
 void bucket::list_objects(const std::string& folder, bool recursive, std::vector<meta::content>* objects, std::vector<std::string>* folders)
 {
     if (folder.empty() || folder[0] != '/') {
-        throw ossexcept(ossexcept::kInvalidPath);
+        throw "Invalid path.";
     }
 
     auto prefix = folder.substr(1);
@@ -225,7 +204,7 @@ void bucket::list_objects(const std::string& folder, bool recursive, std::vector
 void bucket::delete_object(const std::string& obj)
 {
     if(obj.empty() || obj[0] != '/') {
-        throw ossexcept(ossexcept::kInvalidPath);
+        throw "Invalid path.";
     }
 
     auto& head = _http.head();
@@ -253,7 +232,7 @@ void bucket::delete_object(const std::string& obj)
     _http.put_head();
 
     //-------------------------------------Response--------------------------------
-    http::str_body_ostream bs;
+    stream::string_ostream bs;
 
     _http.get_head();
     _http.get_body(bs);
@@ -267,16 +246,8 @@ void bucket::delete_object(const std::string& obj)
     3. 403 Forbidden
     ----------------------------------------------------*/
     auto& status = head.get_status();
-    if(status == "204") {
-
-    }
-    else if (status == "404"){
-        // TODO
-        // auto oe = new bucket_error::no_such_bucket((char*)bs.data(), bs.size());
-        // throw ossexcept(ossexcept::kNotFound, head.get_status_n_comment().c_str(), __FUNCTION__, oe);
-    }
-    else{
-        throw ossexcept(ossexcept::ecode(atoi(status.c_str())), head.get_status_n_comment().c_str(), __FUNCTION__);
+    if(status != "204") {
+        throw osserr::handle(head, bs.ref());
     }
 }
 
@@ -322,27 +293,10 @@ bool bucket::get_object(const std::string& obj, stream::ostream& os, http::gette
         disconnect();
         return true;
     }
-    else if (status == "412"){
-        disconnect();
-        throw ossexcept(ossexcept::kNotSpecified, head.get_status_n_comment().c_str(), __FUNCTION__);
-    }
-    else if (status == "404"){
-        http::str_body_ostream bs;
-        _http.get_body(bs);
-        disconnect();
-
-        auto oe = new osserr((char*)bs.data(), bs.size());
-        throw ossexcept(ossexcept::kNotFound, head.get_status_n_comment().c_str(), __FUNCTION__, oe);
-    }
-    else if(status == "403") {
-        http::str_body_ostream bs;
-        _http.get_body(bs);
-        auto oe = new osserr((char*)bs.data(), bs.size());
-        throw ossexcept(ossexcept::kForbidden, head.get_status_n_comment().c_str(), __FUNCTION__, oe);
-    }
-    else{
-        disconnect();
-        throw ossexcept(ossexcept::kUnhandled, head.get_status_n_comment().c_str(), __FUNCTION__);
+    else {
+        stream::string_ostream so;
+        _http.get_body(os);
+        throw osserr::handle(head, so.ref());
     }
 }
 
@@ -386,7 +340,7 @@ bool bucket::put_object(const std::string& obj, stream::istream& is, http::putte
     body_md5.finish();
 
     //-------------------------------------Response--------------------------------
-    http::str_body_ostream bs;
+    stream::string_ostream bs;
     _http.get_head();
     _http.get_body(bs);
     disconnect();
@@ -396,15 +350,13 @@ bool bucket::put_object(const std::string& obj, stream::istream& is, http::putte
         std::string etag;
         if (head.get("ETag", &etag) && etag.size()>2){
             if (body_md5.str() != std::string(etag.c_str() + 1, 32)){
-                throw ossexcept(ossexcept::kInvalidCheckSum, etag.c_str(), __FUNCTION__);
+                throw "Invalid checksum.";
             }
         }
         return true;
     }
 
-    else{
-        throw ossexcept(ossexcept::kUnhandled, head.get_status_n_comment().c_str(), __FUNCTION__);
-    }
+    throw osserr::handle(head, bs.ref());
 }
 
 const http::header::head& bucket::head_object(const std::string& obj)
@@ -433,18 +385,14 @@ const http::header::head& bucket::head_object(const std::string& obj)
     _http.get_head();
     disconnect();
 
-    if (head.get_status() == "200")
+    if(head.get_status() == "200") {
         return _http.head();
-    else if (head.get_status() == "304")
-        throw ossexcept(ossexcept::kNotModified, head.get_status_n_comment().c_str(), __FUNCTION__);
-    else if (head.get_status() == "404")
-        throw ossexcept(ossexcept::kNotFound, head.get_status_n_comment().c_str(), __FUNCTION__);
-    else if (head.get_status() == "412")
-        throw ossexcept(ossexcept::kPreconditionFailed, head.get_status_n_comment().c_str(), __FUNCTION__);
-    else
-        throw ossexcept(ossexcept::kUnhandled, head.get_status_n_comment().c_str(), __FUNCTION__);
+    }
+    else {
+        throw osserr::handle(head);
+    }
+
 }
 } // namespace bucket
 
 } // namespace alioss
-
