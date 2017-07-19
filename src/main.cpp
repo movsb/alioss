@@ -352,14 +352,20 @@ static int __main(int argc, const char* argv[])
 
                             file_system::mkdir(local_dir);
 
-                            // Prevents path from been `//xxx'. On Windows, it's not a valid filesystem path
+                            // Prevents path from being treated as `//xxx'. On Windows, it's a network path.
                             auto local_path = local_dir.back() == '/' ? local_dir + local_name : local_dir + '/' + local_name;
 
                             stream::file_ostream fos;
-                            fos.open(local_path);
+                            if(fos.open(local_path)) {
+                                std::cout << "Downloading `" << input_path << "' ...";
+                                bkt.get_object(input_path, fos);
+                                std::cout << " Done." << std::endl;
+                            }
+                            else {
+                                std::cerr << "Error: Cannot open `" << local_path << "' for writing. "
+                                    << "Failed to download `" << input_path << "'." << std::endl;
+                            }
 
-                            std::cout << "Downloading `" << input_path << "' ..." << std::endl;
-                            bkt.get_object(input_path, fos);
                         }
                         else {
                             auto local_dir = std::string(".");
@@ -383,17 +389,38 @@ static int __main(int argc, const char* argv[])
 
                             auto prefix = input_dir.back() == '/' ? input_dir : input_dir + '/';
 
-                            for (const auto& f : folders) {
-                                auto path = local_dir + '/' + (f.c_str() + prefix.size());
-                                file_system::mkdir(path);
+                            std::cout << "Summary: "
+                                << folders.size() << (folders.size() > 1 ? " folders" : " folder")
+                                << ", "
+                                << files.size() << (files.size() > 1 ? " files" : " file")
+                                << "."
+                                << std::endl;
+
+                            if(!folders.empty()) {
+                                std::cout << std::endl;
+                                for (const auto& f : folders) {
+                                    auto path = local_dir + '/' + (f.c_str() + prefix.size());
+                                    std::cout << "  Making directory `" << path << "' ...";
+                                    file_system::mkdir(path);
+                                    std::cout << " Done." << std::endl;
+                                }
                             }
 
-                            for (const auto& f : files) {
-                                stream::file_ostream fos;
-                                auto path = local_dir + '/' + (f.key().c_str() + prefix.size());
-                                fos.open(path);
-                                std::cout << "Downloading " << f.key() << " ..." << std::endl;
-                                bkt.get_object(f.key(), fos);
+                            if(!files.empty()) {
+                                std::cout << std::endl;
+                                for(const auto& f : files) {
+                                    stream::file_ostream fos;
+                                    auto path = local_dir + '/' + (f.key().c_str() + prefix.size());
+                                    if(fos.open(path)) {
+                                        std::cout << "  Downloading `" << f.key() << "' ...";
+                                        bkt.get_object(f.key(), fos);
+                                        std::cout << " Done." << std::endl;
+                                    }
+                                    else {
+                                        std::cerr << " Error: Cannot open `" << path << "' for writing. "
+                                            << "Failed to download `" << f.key() << "'." << std::endl;
+                                    }
+                                }
                             }
                         }
 
@@ -431,10 +458,14 @@ static int __main(int argc, const char* argv[])
                             }
 
                             stream::file_istream fis;
-                            fis.open(src);
-                            std::cout << "Uploading `" << src << "' ...";
-                            bkt.put_object(remote_path, fis);
-                            std::cout << std::endl;
+                            if(fis.open(src)) {
+                                std::cout << "Uploading `" << src << "' ...";
+                                bkt.put_object(remote_path, fis);
+                                std::cout << " Done." << std::endl;
+                            }
+                            else {
+                                std::cerr << "Error: Cannot open `" << src << "' for reading. Failed to upload." << std::endl;
+                            }
                         }
                         else if(file_system::is_folder(src)) {
                             std::vector<std::string> files;
@@ -452,10 +483,15 @@ static int __main(int argc, const char* argv[])
 
                             for(const auto& file : files) {
                                 stream::file_istream fis;
-                                fis.open(src + '/' + file);
-                                std::cout << "  Uploading `" << file << "' ...";
-                                bkt.put_object(dst + file, fis);
-                                std::cout << std::endl;
+                                auto path = src + '/' + file;
+                                if(fis.open(path)) {
+                                    std::cout << "  Uploading `" << file << "' ...";
+                                    bkt.put_object(dst + file, fis);
+                                    std::cout << " Done." << std::endl;
+                                }
+                                else {
+                                    std::cerr << "  Error: Cannot open `" << path << "' for reading. Failed to upload." << std::endl;
+                                }
                             }
                         }
                     }
