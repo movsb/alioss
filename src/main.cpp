@@ -305,7 +305,9 @@ static int __main(int argc, const char* argv[])
                         auto input_path = file_system::normalize_slash(argv[2]);
                         auto input_dir = file_system::dirname(input_path);
 
-                        if(input_dir.empty()) input_dir = '/';
+                        if (input_path[0] != '/') {
+                            throw "Invalid path.";
+                        }
 
                         std::vector<meta::content> files;
                         std::vector<std::string> folders;
@@ -350,8 +352,11 @@ static int __main(int argc, const char* argv[])
 
                             file_system::mkdir(local_dir);
 
+                            // Prevents path from been `//xxx'. On Windows, it's not a valid filesystem path
+                            auto local_path = local_dir.back() == '/' ? local_dir + local_name : local_dir + '/' + local_name;
+
                             stream::file_ostream fos;
-                            fos.open(local_dir + '/' + local_name);
+                            fos.open(local_path);
 
                             std::cout << "Downloading `" << input_path << "' ..." << std::endl;
                             bkt.get_object(input_path, fos);
@@ -398,7 +403,7 @@ static int __main(int argc, const char* argv[])
                     if (argc >= 4) {
                         auto dst = file_system::normalize_slash(argv[2]);
                         if (dst[0] != '/')  {
-                            std::cerr << "Bad remote path." << std::endl;
+                            std::cerr << "Bad remote path: " << dst << std::endl;
                             return -1;
                         }
 
