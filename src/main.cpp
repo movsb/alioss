@@ -524,6 +524,12 @@ static int __main(int argc, const char* argv[])
 #ifdef _WIN32
 int wmain(int argc, const wchar_t* _argv[])
 {
+#ifdef _DEBUG
+    if (file_system::is_file("./__debug__")) {
+        ::MessageBoxW(nullptr, L"Attach me", L"", MB_OK);
+    }
+#endif
+
     auto sarr = std::make_unique<std::string[]>(argc);
     auto argv = std::make_unique<const char*[]>(argc + 1);
 

@@ -63,7 +63,7 @@ namespace alioss {
 
             ls_files_impl(wdir, &wfiles);
 
-            int prefix_len = dir.size() + (!dir.empty() && dir.back() == '/' ? 0 : 1);
+            int prefix_len = wdir.size() + (!wdir.empty() && wdir.back() == '/' ? 0 : 1);
             for(auto& file : wfiles) {
                 auto f = strutil::to_utf8(file.c_str() + prefix_len);
                 files->emplace_back(std::move(f));
