@@ -251,7 +251,7 @@ void bucket::delete_object(const std::string& obj)
     }
 }
 
-bool bucket::get_object(const std::string& obj, stream::ostream& os, http::getter getter, const std::string& range/*=""*/, const std::string& unmodified_since/*=""*/)
+bool bucket::get_object(const std::string& obj, stream::ostream& os)
 {
     //---------------------------- Requesting----------------------------------
     auto& head = _http.head();
@@ -270,12 +270,6 @@ bool bucket::get_object(const std::string& obj, stream::ostream& os, http::gette
     // Authorization
     head.add_authorization(sign_head(_key, "GET", date, '/' + _name + obj));
 
-    // Range & Unmodified-Since
-    if (range.size()){
-        head.add("Range", "bytes=" + range);
-        head.add("If-Unmodified-Since", unmodified_since.c_str());
-    }
-
     // Connection
     head.add_connection("close");
 
@@ -289,8 +283,19 @@ bool bucket::get_object(const std::string& obj, stream::ostream& os, http::gette
     auto& status = head.get_status();
 
     if (status == "200"){
-        _http.get_body(os, getter);
+        crypto::cmd5 body_md5;
+        _http.get_body(os, [&](const unsigned char* data, int size, int total, int transfered) {
+            body_md5.update(data, size);
+        });
+        body_md5.finish();
         disconnect();
+
+        std::string etag;
+        if (head.get("ETag", &etag) && etag.size() > 2){
+            if (body_md5.str() != std::string(etag.c_str() + 1, 32)){
+                throw "Invalid checksum.";
+            }
+        }
         return true;
     }
     else {
@@ -300,7 +305,7 @@ bool bucket::get_object(const std::string& obj, stream::ostream& os, http::gette
     }
 }
 
-bool bucket::put_object(const std::string& obj, stream::istream& is, http::putter putter)
+bool bucket::put_object(const std::string& obj, stream::istream& is)
 {
     //---------------------------- Requesting----------------------------------
     auto& head = _http.head();
@@ -335,7 +340,6 @@ bool bucket::put_object(const std::string& obj, stream::istream& is, http::putte
     crypto::cmd5 body_md5;
     _http.put_body(is, [&](const unsigned char* data, int sz, int total, int transferred){
         body_md5.update(data, sz);
-        if(putter) putter(data, sz, total, transferred);
     });
     body_md5.finish();
 

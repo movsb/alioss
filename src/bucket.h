@@ -31,16 +31,11 @@ public:
 	void list_objects(const std::string& prefix, std::vector<meta::content>* objects, std::vector<std::string>* folders);
 	void list_objects(const std::string& folder, bool recursive, std::vector<meta::content>* objects, std::vector<std::string>* folders);
 
-    bool get_object(const std::string& obj, stream::ostream& os, http::getter getter = nullptr,
-		const std::string& range="", const std::string& unmodified_since="");
+    bool get_object(const std::string& obj, stream::ostream& os);
 
 	void delete_object(const std::string& obj);
 
-	bool put_object(
-        const std::string& obj,
-        stream::istream& is,
-        http::putter putter = nullptr
-    );
+	bool put_object(const std::string& obj, stream::istream& is);
 
 	const http::header::head& head_object(const std::string& obj);
 
