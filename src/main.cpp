@@ -1,8 +1,10 @@
-#include <string>
-#include <vector>
 #include <cstdio>
 #include <csignal>
 #include <ctime>
+#include <cstdlib>
+
+#include <string>
+#include <vector>
 #include <iostream>
 #include <fstream>
 #include <functional>
@@ -24,8 +26,11 @@
 
 using namespace alioss;
 
-#define OSS_BUCKET    "twofei-test"
-#define OSS_LOCATION  "oss-cn-shenzhen"
+#define  OSS_BUCKET_NAME_ENV        "__ALIOSS_BUCKET"       // twofei-test
+#define  OSS_BUCKET_LOCATION_ENV    "__ALIOSS_LOCATION"     // oss-cn-shenzhen
+
+static std::string g_oss_bucket_name;
+static std::string g_oss_bucket_location;
 
 bool read_access_key(accesskey* key)
 {
@@ -114,6 +119,7 @@ static int __main(int argc, const char* argv[])
 		return 1;
 	}
 
+    // initialize key/secret
 	accesskey key;
 	try{
 		read_access_key(&key);
@@ -122,6 +128,23 @@ static int __main(int argc, const char* argv[])
 		std::cerr << e << std::endl;
 		return -1;
 	}
+
+    // initialize bucket configuration
+    try{
+        const char* val;
+
+        val = std::getenv(OSS_BUCKET_NAME_ENV);
+        if (val == nullptr) throw "Error: " OSS_BUCKET_NAME_ENV " not set.";
+        g_oss_bucket_name = val;
+
+        val = std::getenv(OSS_BUCKET_LOCATION_ENV);
+        if (val == nullptr) throw "Error: " OSS_BUCKET_LOCATION_ENV " not set.";
+        g_oss_bucket_location = val;
+    }
+    catch (const char* e) {
+        std::cerr << e << std::endl;
+        return -1;
+    }
 
 	try {
 		auto la_command_service = [](){
@@ -183,7 +206,7 @@ static int __main(int argc, const char* argv[])
         else if(object == "object") {
             bucket::bucket bkt(key);
 
-            bkt.set_endpoint(OSS_BUCKET, OSS_LOCATION);
+            bkt.set_endpoint(g_oss_bucket_name, g_oss_bucket_location);
 
             if(argc >= 2) {
                 auto command = std::string(argv[1]);
@@ -231,7 +254,7 @@ static int __main(int argc, const char* argv[])
 
                         std::string url;
                         url += "http://";
-                        url += meta::make_public_host(OSS_BUCKET, OSS_LOCATION);
+                        url += meta::make_public_host(g_oss_bucket_name, g_oss_bucket_location);
 
                         if(argc >= 4) {
                             auto parse_expiration = [](const std::string& expr) {
@@ -292,7 +315,7 @@ static int __main(int argc, const char* argv[])
                             std::map<std::string, std::string> query = {
                                 { "OSSAccessKeyId",  key.key()},
                                 { "Expires",        expr_str },
-                                { "Signature",      sign_url(key, expiration, std::string("/") + OSS_BUCKET + file)},
+                                { "Signature",      sign_url(key, expiration, std::string("/") + g_oss_bucket_name + file)},
                             };
 
                             url += strutil::make_uri(file, query);
