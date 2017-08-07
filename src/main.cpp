@@ -92,7 +92,7 @@ static void help()
     std::cerr << "alioss - a simple Ali OSS manager\n"
         << "\n"
         << "Syntax:\n\n"
-        << "    <type>   <command>    [parameters...]\n\n"
+        << "    <type>   <command>    <[parameters...]>\n\n"
         << "    bucket   list\n"
         << "\n"
         << "    object   list         <directory>\n"
@@ -527,9 +527,11 @@ static int repl()
 {
     help();
 
+    std::string prompt("$ ");
     std::string line;
+    std::string prefix;
 
-    while (std::cout << "$ " && std::getline(std::cin, line)) {
+    while (std::cout << prompt && std::getline(std::cin, line)) {
         if (line[0] == '!') {
             ::_wsystem(strutil::from_utf8(line).c_str()+1);
             continue;
@@ -537,9 +539,21 @@ static int repl()
 
         snippets::Argcv v;
 
-        if (v.parse(line.c_str())) {
-            if (v.argc() == 1 && strcmp(v.argv()[0], "quit") == 0) {
+        if (v.parse((prefix + " " + line).c_str())) {
+            if (prefix.empty() && v.argc() == 1 && strcmp(v.argv()[0], "quit") == 0) {
                 return 0;
+            }
+
+            if (!prefix.empty() && v.argc() == 1) {
+                prompt = "$ ";
+                prefix = "";
+                continue;
+            }
+
+            if (v.argc() == 1) {
+                prefix = v.argv()[0];
+                prompt = prefix + " $ ";
+                continue;
             }
 
             eval(v.argc(), v.argv());
