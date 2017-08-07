@@ -128,5 +128,8 @@
     <ClInclude Include="..\..\src\misc\file_system.h">
       <Filter>Source Files\misc</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\misc\argcv.hpp">
+      <Filter>Source Files\misc</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

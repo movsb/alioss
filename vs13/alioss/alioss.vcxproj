@@ -36,6 +36,7 @@
     <ClInclude Include="..\..\src\crypto\hmac_sha1.h" />
     <ClInclude Include="..\..\src\crypto\md5.h" />
     <ClInclude Include="..\..\src\crypto\sha1.h" />
+    <ClInclude Include="..\..\src\misc\argcv.hpp" />
     <ClInclude Include="..\..\src\misc\file_system.h" />
     <ClInclude Include="..\..\src\misc\strutil.h" />
     <ClInclude Include="..\..\src\misc\time.h" />

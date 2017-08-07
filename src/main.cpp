@@ -23,6 +23,7 @@
 #include "misc/stream.h"
 #include "misc/file_system.h"
 #include "misc/time.h"
+#include "misc/argcv.hpp"
 
 using namespace alioss;
 
@@ -31,8 +32,9 @@ using namespace alioss;
 
 static std::string g_oss_bucket_name;
 static std::string g_oss_bucket_location;
+static accesskey g_key;
 
-bool read_access_key(accesskey* key)
+static bool read_access_key(accesskey* key)
 {
 	std::string file;
 #ifdef _WIN32
@@ -85,109 +87,46 @@ static bool find_folder(const std::vector<std::string>& folders, const std::stri
     }) != folders.cend();
 }
 
-// #define TEST
-
-static int test()
+static void help()
 {
-    return 0;
+    std::cerr << "alioss - a simple Ali OSS manager\n"
+        << "\n"
+        << "Syntax:\n\n"
+        << "    <type>   <command>    [parameters...]\n\n"
+        << "    bucket   list\n"
+        << "\n"
+        << "    object   list         <directory>\n"
+        << "    object   head         <file>\n"
+        << "    object   sign         <file>              [expiration]\n"
+        << "\n"
+        << "    object   download     <file>              [file/directory]\n"
+        << "    object   download     <directory>         [directory]\n"
+        << "\n"
+        << "    object   upload       <file>              <file>\n"
+        << "    object   upload       <directory>         <file>\n"
+        << "    object   upload       <directory>         <directory>\n"
+        << "\n"
+        << "    object   delete       <file/directory>\n"
+        << "\n"
+        ;
 }
 
-static int __main(int argc, const char* argv[])
+static int eval(int argc, const char*const * argv)
 {
-#ifdef TEST
-    return test();
-#endif // TEST
-
-#ifdef _WIN32
-    SetConsoleCP(CP_UTF8);
-    SetConsoleOutputCP(CP_UTF8);
-#endif
-
-	signal(SIGINT, [](int){});
-
-#ifdef _WIN32
-	socket::wsa wsa;
-#endif
-
-	try{
-#ifdef _WIN32
-		wsa.init();
-#endif
-	}
-	catch (socket::socketexcept& e){
-		socketerror_stderr_dumper(e);
-		return 1;
-	}
-
-    // initialize key/secret
-	accesskey key;
-	try{
-		read_access_key(&key);
-	}
-	catch (std::string& e){
-		std::cerr << e << std::endl;
-		return -1;
-	}
-
-    // initialize bucket configuration
-    try{
-        const char* val;
-
-        val = std::getenv(OSS_BUCKET_NAME_ENV);
-        if (val == nullptr) throw "Error: " OSS_BUCKET_NAME_ENV " not set.";
-        g_oss_bucket_name = val;
-
-        val = std::getenv(OSS_BUCKET_LOCATION_ENV);
-        if (val == nullptr) throw "Error: " OSS_BUCKET_LOCATION_ENV " not set.";
-        g_oss_bucket_location = val;
-    }
-    catch (const char* e) {
-        std::cerr << e << std::endl;
-        return -1;
+    if (argc < 1) {
+        return 1;
     }
 
-	try {
-		auto la_command_service = [](){
-            std::cout << "alioss - a simple Ali OSS manager\n";
-            std::cout << "\n";
-			std::cout 
-                << "Syntax:\n\n"
-                << "    <type>   <command>    [parameters...]\n\n"
-                << "    bucket   list\n"
-                << "\n"
-                << "    object   list         <directory>\n"
-                << "    object   head         <file>\n"
-                << "    object   sign         <file>              [expiration]\n"
-                << "\n"
-                << "    object   download     <file>              [file/directory]\n"
-                << "    object   download     <directory>         [directory]\n"
-                << "\n"
-                << "    object   upload       <file>              <file>\n"
-                << "    object   upload       <directory>         <file>\n"
-                << "    object   upload       <directory>         <directory>\n"
-                << "\n"
-                << "    object   delete       <file/directory>\n"
-                << "\n"
-				;
-		};
-
-        if(argc < 2) {
-            la_command_service();
-            return 0;
-        }
-
-        argc--;
-        argv++;
-
+    try {
         auto object = std::string(argv[0]);
-        if(object == "bucket") {
-            service::service svc(key);
+        if (object == "bucket") {
+            service::service svc(g_key);
 
             svc.set_endpoint(meta::oss_root_server);
 
-            if(argc >= 2) {
+            if (argc >= 2) {
                 auto command = std::string(argv[1]);
-                if(command == "list") {
+                if (command == "list") {
                     std::vector<meta::bucket> buckets;
                     svc.list_buckets(&buckets);
                     for (const auto& bkt : buckets) {
@@ -198,20 +137,20 @@ static int __main(int argc, const char* argv[])
                             << "End Point     : " << meta::make_endpoint(bkt.location()) << std::endl
                             << "Public Host   : " << meta::make_public_host(bkt.name(), bkt.location()) << std::endl
                             << std::endl
-                        ;
+                            ;
                     }
                 }
             }
         }
-        else if(object == "object") {
-            bucket::bucket bkt(key);
+        else if (object == "object") {
+            bucket::bucket bkt(g_key);
 
             bkt.set_endpoint(g_oss_bucket_name, g_oss_bucket_location);
 
-            if(argc >= 2) {
+            if (argc >= 2) {
                 auto command = std::string(argv[1]);
-                if(command == "list") {
-                    if(argc >= 3) {
+                if (command == "list") {
+                    if (argc >= 3) {
                         auto folder = std::string(argv[2]);
                         std::vector<meta::content> files;
                         std::vector<std::string> folders;
@@ -238,8 +177,8 @@ static int __main(int argc, const char* argv[])
                         }
                     }
                 }
-                else if(command == "head") {
-                    if(argc >= 3) {
+                else if (command == "head") {
+                    if (argc >= 3) {
                         auto file = argv[2];
                         auto head = bkt.head_object(file);
                         head.dump([](size_t i, const std::string& key, const std::string& val){
@@ -248,7 +187,7 @@ static int __main(int argc, const char* argv[])
                         });
                     }
                 }
-                else if(command == "sign") {
+                else if (command == "sign") {
                     if (argc >= 3) {
                         auto file = argv[2];
 
@@ -256,16 +195,16 @@ static int __main(int argc, const char* argv[])
                         url += "http://";
                         url += meta::make_public_host(g_oss_bucket_name, g_oss_bucket_location);
 
-                        if(argc >= 4) {
+                        if (argc >= 4) {
                             auto parse_expiration = [](const std::string& expr) {
                                 int day = 0, hour = 0, minute = 0, second = 0;
 
-                                for(size_t i = 0; i < expr.size();) {
+                                for (size_t i = 0; i < expr.size();) {
                                     int num = 0;
                                     char unit = 's';
 
-                                    for(; i < expr.size(); i++) {
-                                        if('0' <= expr[i] && expr[i] <= '9') {
+                                    for (; i < expr.size(); i++) {
+                                        if ('0' <= expr[i] && expr[i] <= '9') {
                                             num *= 10;
                                             num += expr[i] - '0';
                                         }
@@ -274,14 +213,14 @@ static int __main(int argc, const char* argv[])
                                         }
                                     }
 
-                                    if(i < expr.size()) {
+                                    if (i < expr.size()) {
                                         unit = expr[i];
                                         i++;
                                     }
 
                                     int* p;
 
-                                    switch(unit) {
+                                    switch (unit) {
                                     case 'd': p = &day; break;
                                     case 'h': p = &hour; break;
                                     case 'm': p = &minute; break;
@@ -303,7 +242,7 @@ static int __main(int argc, const char* argv[])
                             };
 
                             auto expr = parse_expiration(argv[3]);
-                            if(expr == -1) {
+                            if (expr == -1) {
                                 std::cerr << "Bad expiration." << std::endl;
                                 return -1;
                             }
@@ -313,9 +252,9 @@ static int __main(int argc, const char* argv[])
                             auto expr_str = std::to_string(expiration);
 
                             std::map<std::string, std::string> query = {
-                                { "OSSAccessKeyId",  key.key()},
-                                { "Expires",        expr_str },
-                                { "Signature",      sign_url(key, expiration, std::string("/") + g_oss_bucket_name + file)},
+                                { "OSSAccessKeyId", g_key.key() },
+                                { "Expires", expr_str },
+                                { "Signature", sign_url(g_key, expiration, std::string("/") + g_oss_bucket_name + file) },
                             };
 
                             url += strutil::make_uri(file, query);
@@ -327,8 +266,8 @@ static int __main(int argc, const char* argv[])
                         std::cout << url << std::endl;
                     }
                 }
-                else if(command == "download") {
-                    if(argc >= 3) {
+                else if (command == "download") {
+                    if (argc >= 3) {
                         auto input_path = file_system::normalize_slash(argv[2]);
                         auto input_dir = file_system::dirname(input_path);
 
@@ -383,7 +322,7 @@ static int __main(int argc, const char* argv[])
                             auto local_path = local_dir.back() == '/' ? local_dir + local_name : local_dir + '/' + local_name;
 
                             stream::file_ostream fos;
-                            if(fos.open(local_path)) {
+                            if (fos.open(local_path)) {
                                 std::cout << "Downloading `" << input_path << "' ...";
                                 bkt.get_object(input_path, fos);
                                 std::cout << " Done." << std::endl;
@@ -423,7 +362,7 @@ static int __main(int argc, const char* argv[])
                                 << "."
                                 << std::endl;
 
-                            if(!folders.empty()) {
+                            if (!folders.empty()) {
                                 std::cout << std::endl;
                                 for (const auto& f : folders) {
                                     auto path = local_dir + '/' + (f.c_str() + prefix.size());
@@ -433,12 +372,12 @@ static int __main(int argc, const char* argv[])
                                 }
                             }
 
-                            if(!files.empty()) {
+                            if (!files.empty()) {
                                 std::cout << std::endl;
-                                for(const auto& f : files) {
+                                for (const auto& f : files) {
                                     stream::file_ostream fos;
                                     auto path = local_dir + '/' + (f.key().c_str() + prefix.size());
-                                    if(fos.open(path)) {
+                                    if (fos.open(path)) {
                                         std::cout << "  Downloading `" << f.key() << "' ...";
                                         bkt.get_object(f.key(), fos);
                                         std::cout << " Done." << std::endl;
@@ -453,7 +392,7 @@ static int __main(int argc, const char* argv[])
 
                     }
                 }
-                else if(command == "upload") {
+                else if (command == "upload") {
                     if (argc >= 4) {
                         auto dst = file_system::normalize_slash(argv[2]);
                         if (dst[0] != '/')  {
@@ -485,7 +424,7 @@ static int __main(int argc, const char* argv[])
                             }
 
                             stream::file_istream fis;
-                            if(fis.open(src)) {
+                            if (fis.open(src)) {
                                 std::cout << "Uploading `" << src << "' ...";
                                 bkt.put_object(remote_path, fis);
                                 std::cout << " Done." << std::endl;
@@ -494,10 +433,10 @@ static int __main(int argc, const char* argv[])
                                 std::cerr << "Error: Cannot open `" << src << "' for reading. Failed to upload." << std::endl;
                             }
                         }
-                        else if(file_system::is_folder(src)) {
+                        else if (file_system::is_folder(src)) {
                             std::vector<std::string> files;
 
-                            if(dst.back() != '/') {
+                            if (dst.back() != '/') {
                                 dst += '/';
                             }
 
@@ -508,10 +447,10 @@ static int __main(int argc, const char* argv[])
                                 << " will be uploaded.\n"
                                 << std::endl;
 
-                            for(const auto& file : files) {
+                            for (const auto& file : files) {
                                 stream::file_istream fis;
                                 auto path = src + '/' + file;
-                                if(fis.open(path)) {
+                                if (fis.open(path)) {
                                     std::cout << "  Uploading `" << file << "' ...";
                                     bkt.put_object(dst + file, fis);
                                     std::cout << " Done." << std::endl;
@@ -523,26 +462,26 @@ static int __main(int argc, const char* argv[])
                         }
                     }
                 }
-                else if(command == "delete") {
-                    if(argc >= 3) {
+                else if (command == "delete") {
+                    if (argc >= 3) {
                         auto spec = file_system::normalize_slash(argv[2]);
                         std::vector<meta::content> files;
                         std::vector<std::string> folders;
 
                         bkt.list_objects(spec, &files, &folders);
 
-                        if(find_file(files, spec)) {
+                        if (find_file(files, spec)) {
                             bkt.delete_object(spec);
                             std::cout << "Deleted." << std::endl;
                             return  0;
                         }
 
                         auto spec_back = spec;
-                        if(spec.back() != '/') spec += '/';
+                        if (spec.back() != '/') spec += '/';
 
-                        if(find_folder(folders, spec)) {
-                            for(const auto& file : files) {
-                                if(std::strncmp(file.key().c_str(), spec.c_str(), spec.size()) == 0) {
+                        if (find_folder(folders, spec)) {
+                            for (const auto& file : files) {
+                                if (std::strncmp(file.key().c_str(), spec.c_str(), spec.size()) == 0) {
                                     std::cout << "Deleting `" << file.key() << "' ...";
                                     bkt.delete_object(file.key());
                                     std::cout << " Done." << std::endl;
@@ -562,26 +501,104 @@ static int __main(int argc, const char* argv[])
                 }
             }
         }
-	}
-	catch (osserr& e){
-        std::cerr << e << std::endl;
-		return -1;
-	}
-	catch (socket::socketexcept& e){
-		e.push_stack(__FUNCTION__);
-		socketerror_stderr_dumper(e);
-        return -1;
-	}
-    catch(const char* e) {
+    }
+    catch (osserr& e){
         std::cerr << e << std::endl;
         return -1;
     }
-	catch (...){
-		std::cerr << "Fatal error: unhandled exception occurred!\n";
+    catch (socket::socketexcept& e){
+        e.push_stack(__FUNCTION__);
+        socketerror_stderr_dumper(e);
         return -1;
+    }
+    catch (const char* e) {
+        std::cerr << e << std::endl;
+        return -1;
+    }
+    catch (...){
+        std::cerr << "Fatal error: unhandled exception occurred!\n";
+        return -1;
+    }
+
+    return 0;
+}
+
+static int repl()
+{
+    help();
+
+    std::string line;
+
+    while (std::cout << "$ " && std::getline(std::cin, line)) {
+        snippets::Argcv v;
+        if (v.parse(line.c_str())) {
+            if (v.argc() == 1 && strcmp(v.argv()[0], "quit") == 0) {
+                return 0;
+            }
+
+            eval(v.argc(), v.argv());
+        }
+        else {
+            std::cerr << "Bad arguments." << std::endl;
+        }
+    }
+
+    return 0;
+}
+
+static int __main(int argc, const char* argv[])
+{
+#ifdef _WIN32
+    SetConsoleCP(CP_UTF8);
+    SetConsoleOutputCP(CP_UTF8);
+#endif
+
+	signal(SIGINT, [](int){});
+
+#ifdef _WIN32
+	socket::wsa wsa;
+#endif
+
+	try{
+#ifdef _WIN32
+		wsa.init();
+#endif
+	}
+	catch (socket::socketexcept& e){
+		socketerror_stderr_dumper(e);
+		return 1;
 	}
 
-	return 0;
+    // initialize key/secret
+	try{
+		read_access_key(&g_key);
+	}
+	catch (std::string& e){
+		std::cerr << e << std::endl;
+		return -1;
+	}
+
+    // initialize bucket configuration
+    try{
+        const char* val;
+
+        val = std::getenv(OSS_BUCKET_NAME_ENV);
+        if (val == nullptr) throw "Error: " OSS_BUCKET_NAME_ENV " not set.";
+        g_oss_bucket_name = val;
+
+        val = std::getenv(OSS_BUCKET_LOCATION_ENV);
+        if (val == nullptr) throw "Error: " OSS_BUCKET_LOCATION_ENV " not set.";
+        g_oss_bucket_location = val;
+    }
+    catch (const char* e) {
+        std::cerr << e << std::endl;
+        return -1;
+    }
+
+    return argc > 1
+        ? eval(--argc, ++argv)
+        : repl()
+        ;
 }
 
 #ifdef _WIN32
