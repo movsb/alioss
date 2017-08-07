@@ -530,7 +530,13 @@ static int repl()
     std::string line;
 
     while (std::cout << "$ " && std::getline(std::cin, line)) {
+        if (line[0] == '!') {
+            ::_wsystem(strutil::from_utf8(line).c_str()+1);
+            continue;
+        }
+
         snippets::Argcv v;
+
         if (v.parse(line.c_str())) {
             if (v.argc() == 1 && strcmp(v.argv()[0], "quit") == 0) {
                 return 0;
