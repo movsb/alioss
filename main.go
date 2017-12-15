@@ -233,7 +233,7 @@ func eval(argc int, argv []string) {
 
 					if isFileDownload {
 						localDir := "."
-						localName := filepath.Dir(inputPath)
+						localName := filepath.Base(inputPath)
 
 						if argc >= 4 {
 							str := normalizeSlash(argv[3])
@@ -248,7 +248,7 @@ func eval(argc int, argv []string) {
 							}
 						}
 
-						os.MkdirAll(localDir, os.ModeDir)
+						os.MkdirAll(localDir, os.ModePerm)
 
 						localPath := ""
 						if localDir[len(localDir)-1] == '/' {
@@ -289,12 +289,12 @@ func eval(argc int, argv []string) {
 						}
 
 						fmt.Print("Summary: ")
-						fmt.Print(len(files), "file")
+						fmt.Print(len(files), " file")
 						if len(files) > 1 {
 							fmt.Print("s")
 						}
 
-						fmt.Print(len(folders), "folders")
+						fmt.Print(" and ", len(folders), " folder")
 						if len(folders) > 1 {
 							fmt.Print("s")
 						}
@@ -306,16 +306,17 @@ func eval(argc int, argv []string) {
 							for _, folder := range folders {
 								path := localDir + "/" + string(folder)[len(prefix):]
 								fmt.Printf("  Making directory `%s' ...", path)
-								err = os.MkdirAll(path, os.ModeDir)
+								err = os.MkdirAll(path, os.ModePerm)
 								if err != nil {
 									panic(err)
 								}
 								fmt.Println("  Done.")
 							}
+
+							fmt.Println()
 						}
 
 						if len(files) > 0 {
-							fmt.Println()
 							for _, file := range files {
 								path := localDir + "/" + file.Key[len(prefix):]
 								fp, err := os.Create(path)
@@ -329,6 +330,8 @@ func eval(argc int, argv []string) {
 								}
 								fmt.Println("  Done.")
 							}
+
+							fmt.Println()
 						}
 					}
 				}

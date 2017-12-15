@@ -48,7 +48,7 @@ func (c *Client) ListBuckets() []Bucket {
 	return bkts.Buckets
 }
 
-func (c *Client) listObjectsInternal(prefix, marker string, recursive bool, files *[]File, folders *[]Folder, nextMarker *string, prefixes *[]string) bool {
+func (c *Client) listObjectsInternal(prefix, marker string, recursive bool, files *[]File, folders *[]Folder, nextMarker *string, prefixes *map[string]bool) bool {
 	req := newRequest("https://"+makePublicHost(ossBucket, ossLocation), ossBucket)
 	delimiter := ""
 	if !recursive {
@@ -78,7 +78,9 @@ func (c *Client) listObjectsInternal(prefix, marker string, recursive bool, file
 		IsTruncated    bool
 		NextMarker     string
 		Contents       []Object
-		CommonPrefixes []string
+		CommonPrefixes []struct {
+			Prefix string
+		}
 	}
 
 	rets := &ListObjectsResult{}
@@ -93,22 +95,24 @@ func (c *Client) listObjectsInternal(prefix, marker string, recursive bool, file
 	}
 
 	for _, obj := range rets.Contents {
+		obj.Key = "/" + obj.Key
+
 		if !recursive || obj.isFile() {
 			*files = append(*files, obj.File)
 		}
 
 		if recursive {
 			if obj.isFile() {
-				*prefixes = append(*prefixes, obj.dirName())
+				(*prefixes)[obj.dirName()] = true
 			} else {
-				*prefixes = append(*prefixes, "/"+obj.Key)
+				(*prefixes)[obj.Key] = true
 			}
 		}
 	}
 
-	if recursive {
+	if !recursive {
 		for _, folder := range rets.CommonPrefixes {
-			*folders = append(*folders, Folder(folder))
+			*folders = append(*folders, Folder("/"+folder.Prefix))
 		}
 	}
 
@@ -118,18 +122,19 @@ func (c *Client) listObjectsInternal(prefix, marker string, recursive bool, file
 func (c *Client) listObjectsLoop(prefix string, recursive bool) ([]File, []Folder) {
 	var (
 		marker   string
-		prefixes []string
+		prefixes map[string]bool
 		files    []File
 		folders  []Folder
 	)
 
+	prefixes = make(map[string]bool)
+
 	for c.listObjectsInternal(prefix, marker, recursive, &files, &folders, &marker, &prefixes) {
 		// emply block
-		log.Println("looping")
 	}
 
 	if recursive {
-		for _, f := range prefixes {
+		for f := range prefixes {
 			folders = append(folders, Folder(f))
 		}
 	}
