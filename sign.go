@@ -15,6 +15,7 @@ type xAccessKey struct {
 func sign(key *xAccessKey, msg string) string {
 	h := hmac.New(sha1.New, []byte(key.secret))
 	h.Write([]byte(msg))
+	// log.Println("sign msg:", msg)
 	return base64.StdEncoding.EncodeToString(h.Sum(nil))
 }
 

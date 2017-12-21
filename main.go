@@ -6,11 +6,10 @@ var key = xAccessKey{
 }
 
 const (
-	ossBucket   = "twofei-test"
-	ossLocation = "oss-cn-shenzhen"
+	ossBucket   = "twofei-wordpress"
+	ossLocation = "oss-cn-hangzhou"
 )
 
 func main() {
-	c := newClient("https://" + ossRootServer)
-	c.ListBuckets()
+	oss := newClient(ossRootServer)
 }

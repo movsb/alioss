@@ -19,13 +19,17 @@ func gmdate() string {
 }
 
 type xRequest struct {
-	host string
-	c    http.Client
+	host   string
+	bucket string
+	c      http.Client
 }
 
-func newRequest(host string) *xRequest {
+func newRequest(host string, bucket string) *xRequest {
 	r := &xRequest{}
 	r.host = host
+	if bucket != "" {
+		r.bucket = "/" + bucket
+	}
 	return r
 }
 
@@ -40,7 +44,7 @@ func makeURL(host, resource string) (string, error) {
 	return u.String(), nil
 }
 
-func (r *xRequest) Get(resource string) (*http.Response, []byte, error) {
+func (r *xRequest) Get(resource string, queries map[string]string) (*http.Response, []byte, error) {
 	u, err := makeURL(r.host, resource)
 	if err != nil {
 		return nil, nil, err
@@ -53,7 +57,7 @@ func (r *xRequest) Get(resource string) (*http.Response, []byte, error) {
 	date := gmdate()
 	req.Header.Add("Date", date)
 
-	auth := signHead(&key, "GET", date, resource)
+	auth := signHead(&key, "GET", date, r.bucket+resource)
 	req.Header.Add("Authorization", auth)
 
 	resp, err := r.c.Do(req)
