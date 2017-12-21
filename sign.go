@@ -8,12 +8,12 @@ import (
 )
 
 type xAccessKey struct {
-	key    []byte
-	secret []byte
+	key    string
+	secret string
 }
 
 func sign(key *xAccessKey, msg string) string {
-	h := hmac.New(sha1.New, key.secret)
+	h := hmac.New(sha1.New, []byte(key.secret))
 	h.Write([]byte(msg))
 	return base64.StdEncoding.EncodeToString(h.Sum(nil))
 }
@@ -24,7 +24,7 @@ func signHead(key *xAccessKey, verb string, date string, resource string) string
 	return "OSS " + key.key + ":" + mac
 }
 
-func signURL(key *xAccessKey, expiration uint, resource string) string {
+func signURL(key *xAccessKey, expiration int, resource string) string {
 	msg := "GET\n\n\n" + strconv.Itoa(expiration) + "\n" + resource
 	return sign(key, msg)
 }
