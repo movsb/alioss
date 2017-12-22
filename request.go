@@ -52,11 +52,19 @@ func makeURL(host, resource string, queries map[string]string) (string, error) {
 }
 
 func (r *xRequest) Get(resource string, queries map[string]string) (*http.Response, []byte, error) {
+	return r.Do("GET", resource, queries)
+}
+
+func (r *xRequest) Delete(resource string) (*http.Response, []byte, error) {
+	return r.Do("DELETE", resource, nil)
+}
+
+func (r *xRequest) Do(method string, resource string, queries map[string]string) (*http.Response, []byte, error) {
 	u, err := makeURL(r.host, resource, queries)
 	if err != nil {
 		return nil, nil, err
 	}
-	req, err := http.NewRequest("GET", u, nil)
+	req, err := http.NewRequest(method, u, nil)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -64,7 +72,7 @@ func (r *xRequest) Get(resource string, queries map[string]string) (*http.Respon
 	date := gmdate()
 	req.Header.Add("Date", date)
 
-	auth := signHead(&key, "GET", date, r.bucket+resource)
+	auth := signHead(&key, method, date, r.bucket+resource)
 	req.Header.Add("Authorization", auth)
 
 	resp, err := r.c.Do(req)

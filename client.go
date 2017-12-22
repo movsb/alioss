@@ -157,3 +157,24 @@ func (c *Client) ListFolder(folder string, recursive bool) ([]File, []Folder) {
 
 	return c.listObjectsLoop(prefix, recursive)
 }
+
+func (c *Client) DeleteObject(obj string) {
+	if obj == "" || obj[0] != '/' {
+		panic("invalid path")
+	}
+
+	req := newRequest("https://"+makePublicHost(ossBucket, ossLocation), ossBucket)
+	resp, body, err := req.Delete(obj)
+
+	if err != nil {
+		panic(err)
+	}
+
+	if resp.StatusCode != 204 && resp.StatusCode != 200 {
+		xerr, err := parseErrorXML(body)
+		if err != nil {
+			panic(err)
+		}
+		panic(xerr)
+	}
+}
