@@ -33,7 +33,7 @@ func newRequest(host string, bucket string) *xRequest {
 	return r
 }
 
-func makeURL(host, resource string) (string, error) {
+func makeURL(host, resource string, queries map[string]string) (string, error) {
 	u, err := url.Parse(host)
 	if err != nil {
 		return "", err
@@ -41,11 +41,18 @@ func makeURL(host, resource string) (string, error) {
 
 	u.Path = resource
 
+	q := u.Query()
+	for k, v := range queries {
+		q.Add(k, v)
+	}
+
+	u.RawQuery = q.Encode()
+
 	return u.String(), nil
 }
 
 func (r *xRequest) Get(resource string, queries map[string]string) (*http.Response, []byte, error) {
-	u, err := makeURL(r.host, resource)
+	u, err := makeURL(r.host, resource, queries)
 	if err != nil {
 		return nil, nil, err
 	}

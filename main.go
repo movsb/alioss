@@ -1,5 +1,9 @@
 package main
 
+import (
+	"log"
+)
+
 var key = xAccessKey{
 	key:    "",
 	secret: "",
@@ -12,4 +16,6 @@ const (
 
 func main() {
 	oss := newClient(ossRootServer)
+	f, d := oss.ListFolder("/code-mirror/", false)
+	log.Println(f, d)
 }

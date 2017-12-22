@@ -46,7 +46,7 @@ func (c *Client) ListBuckets() []Bucket {
 	return bkts.Buckets
 }
 
-func (c *Client) listObjectsInternal(prefix, marker string, recursive bool) ([]File, []Folder, []string, string) {
+func (c *Client) listObjectsInternal(prefix, marker string, recursive bool, files *[]File, folders *[]Folder, nextMarker *string, prefixes *[]string) bool {
 	req := newRequest("https://"+makePublicHost(ossBucket, ossLocation), ossBucket)
 	delimiter := ""
 	if !recursive {
@@ -86,36 +86,74 @@ func (c *Client) listObjectsInternal(prefix, marker string, recursive bool) ([]F
 	}
 
 	isTruncated := rets.IsTruncated
-	nextMarker := ""
 	if isTruncated {
-		nextMarker = rets.NextMarker
+		*nextMarker = rets.NextMarker
 	}
-
-	var (
-		files    []File
-		folders  []Folder
-		prefixes []string
-	)
 
 	for _, obj := range rets.Contents {
 		if !recursive || obj.isFile() {
-			files = append(files, obj.File)
+			*files = append(*files, obj.File)
 		}
 
 		if recursive {
 			if obj.isFile() {
-				prefixes = append(prefixes, obj.dirName())
+				*prefixes = append(*prefixes, obj.dirName())
 			} else {
-				prefixes = append(prefixes, "/"+obj.Key)
+				*prefixes = append(*prefixes, "/"+obj.Key)
 			}
 		}
 	}
 
 	if recursive {
 		for _, folder := range rets.CommonPrefixes {
-			folders = append(folders, Folder(folder))
+			*folders = append(*folders, Folder(folder))
 		}
 	}
 
-	return files, folders, prefixes, nextMarker
+	return isTruncated
+}
+
+func (c *Client) listObjectsLoop(prefix string, recursive bool) ([]File, []Folder) {
+	var (
+		marker   string
+		prefixes []string
+		files    []File
+		folders  []Folder
+	)
+
+	for c.listObjectsInternal(prefix, marker, recursive, &files, &folders, &marker, &prefixes) {
+		// emply block
+		log.Println("looping")
+	}
+
+	if recursive {
+		for _, f := range prefixes {
+			folders = append(folders, Folder(f))
+		}
+	}
+
+	return files, folders
+}
+
+// ListPrefix lists
+func (c *Client) ListPrefix(prefix string) ([]File, []Folder) {
+	if prefix == "" || prefix[0] != '/' {
+		panic("invalid path.")
+	}
+
+	return c.listObjectsLoop(prefix[1:], true)
+}
+
+// ListFolder lists files and folders that inside it
+func (c *Client) ListFolder(folder string, recursive bool) ([]File, []Folder) {
+	if folder == "" || folder[0] != '/' {
+		panic("invalid path.")
+	}
+
+	prefix := folder[1:]
+	if prefix != "" && prefix[len(prefix)-1] != '/' {
+		prefix += "/"
+	}
+
+	return c.listObjectsLoop(prefix, recursive)
 }
