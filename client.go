@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/xml"
+	"fmt"
 	"log"
 )
 
@@ -177,4 +178,23 @@ func (c *Client) DeleteObject(obj string) {
 		}
 		panic(xerr)
 	}
+}
+
+func (c *Client) HeadObject(obj string) string {
+	if obj == "" || obj[0] != '/' {
+		panic("invalid path")
+	}
+
+	req := newRequest("https://"+makePublicHost(ossBucket, ossLocation), ossBucket)
+	head, err := req.Head(obj)
+	if err != nil {
+		panic(err)
+	}
+
+	s := ""
+	for k, v := range head {
+		s += fmt.Sprintf("%-24s: %s\n", k, v[0])
+	}
+
+	return s
 }

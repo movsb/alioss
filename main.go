@@ -16,7 +16,6 @@ const (
 
 func main() {
 	oss := newClient(ossRootServer)
-	oss.DeleteObject("/a.txt")
-	f, d := oss.ListFolder("/code-mirror/", false)
-	log.Println(f, d)
+	s := oss.HeadObject("/vim.js")
+	log.Printf("\n%s", s)
 }

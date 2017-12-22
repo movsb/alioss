@@ -59,6 +59,14 @@ func (r *xRequest) Delete(resource string) (*http.Response, []byte, error) {
 	return r.Do("DELETE", resource, nil)
 }
 
+func (r *xRequest) Head(resource string) (http.Header, error) {
+	resp, _, err := r.Do("HEAD", resource, nil)
+	if err != nil {
+		return nil, err
+	}
+	return resp.Header, nil
+}
+
 func (r *xRequest) Do(method string, resource string, queries map[string]string) (*http.Response, []byte, error) {
 	u, err := makeURL(r.host, resource, queries)
 	if err != nil {
