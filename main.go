@@ -16,5 +16,5 @@ const (
 
 func main() {
 	oss := newClient(ossRootServer)
-	oss.GetFile("/xml.js", os.Stdout)
+	oss.PutFile("/a.txt", os.Stdin)
 }

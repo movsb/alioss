@@ -208,3 +208,10 @@ func (c *Client) GetFile(file string, w io.Writer) error {
 	err := req.GetFile(file, w)
 	return err
 }
+
+//
+func (c *Client) PutFile(file string, rc io.ReadCloser) error {
+	req := newRequest("https://"+makePublicHost(ossBucket, ossLocation), ossBucket)
+	err := req.PutFile(file, rc)
+	return err
+}

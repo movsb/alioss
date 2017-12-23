@@ -53,27 +53,32 @@ func makeURL(host, resource string, queries map[string]string) (string, error) {
 }
 
 func (r *xRequest) GetString(resource string, queries map[string]string) (*http.Response, []byte, error) {
-	return r.Do("GET", resource, queries, nil)
+	return r.Do("GET", resource, queries, nil, nil)
 }
 
 func (r *xRequest) GetFile(resource string, w io.Writer) error {
-	_, _, err := r.Do("GET", resource, nil, w)
+	_, _, err := r.Do("GET", resource, nil, nil, w)
+	return err
+}
+
+func (r *xRequest) PutFile(resource string, rc io.ReadCloser) error {
+	_, _, err := r.Do("PUT", resource, nil, rc, nil)
 	return err
 }
 
 func (r *xRequest) Delete(resource string) (*http.Response, []byte, error) {
-	return r.Do("DELETE", resource, nil, nil)
+	return r.Do("DELETE", resource, nil, nil, nil)
 }
 
 func (r *xRequest) Head(resource string) (http.Header, error) {
-	resp, _, err := r.Do("HEAD", resource, nil, nil)
+	resp, _, err := r.Do("HEAD", resource, nil, nil, nil)
 	if err != nil {
 		return nil, err
 	}
 	return resp.Header, nil
 }
 
-func (r *xRequest) Do(method string, resource string, queries map[string]string, w io.Writer) (*http.Response, []byte, error) {
+func (r *xRequest) Do(method string, resource string, queries map[string]string, rc io.ReadCloser, w io.Writer) (*http.Response, []byte, error) {
 	u, err := makeURL(r.host, resource, queries)
 	if err != nil {
 		return nil, nil, err
@@ -82,6 +87,8 @@ func (r *xRequest) Do(method string, resource string, queries map[string]string,
 	if err != nil {
 		return nil, nil, err
 	}
+
+	req.Body = rc
 
 	date := gmdate()
 	req.Header.Add("Date", date)
