@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -51,23 +52,28 @@ func makeURL(host, resource string, queries map[string]string) (string, error) {
 	return u.String(), nil
 }
 
-func (r *xRequest) Get(resource string, queries map[string]string) (*http.Response, []byte, error) {
-	return r.Do("GET", resource, queries)
+func (r *xRequest) GetString(resource string, queries map[string]string) (*http.Response, []byte, error) {
+	return r.Do("GET", resource, queries, nil)
+}
+
+func (r *xRequest) GetFile(resource string, w io.Writer) error {
+	_, _, err := r.Do("GET", resource, nil, w)
+	return err
 }
 
 func (r *xRequest) Delete(resource string) (*http.Response, []byte, error) {
-	return r.Do("DELETE", resource, nil)
+	return r.Do("DELETE", resource, nil, nil)
 }
 
 func (r *xRequest) Head(resource string) (http.Header, error) {
-	resp, _, err := r.Do("HEAD", resource, nil)
+	resp, _, err := r.Do("HEAD", resource, nil, nil)
 	if err != nil {
 		return nil, err
 	}
 	return resp.Header, nil
 }
 
-func (r *xRequest) Do(method string, resource string, queries map[string]string) (*http.Response, []byte, error) {
+func (r *xRequest) Do(method string, resource string, queries map[string]string, w io.Writer) (*http.Response, []byte, error) {
 	u, err := makeURL(r.host, resource, queries)
 	if err != nil {
 		return nil, nil, err
@@ -90,10 +96,14 @@ func (r *xRequest) Do(method string, resource string, queries map[string]string)
 
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, nil, err
+	if w == nil {
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return nil, nil, err
+		}
+		return resp, body, nil
 	}
 
-	return resp, body, nil
+	_, err = io.Copy(w, resp.Body)
+	return resp, nil, err
 }

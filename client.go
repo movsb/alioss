@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/xml"
 	"fmt"
+	"io"
 	"log"
 )
 
@@ -20,7 +21,7 @@ func newClient(host string) *Client {
 // ListBuckets lists all buckets that owned by current
 // key/secret pair owner
 func (c *Client) ListBuckets() []Bucket {
-	resp, body, err := c.root.Get("/", nil)
+	resp, body, err := c.root.GetString("/", nil)
 	if err != nil {
 		panic(err)
 	}
@@ -54,7 +55,7 @@ func (c *Client) listObjectsInternal(prefix, marker string, recursive bool, file
 		delimiter = "/"
 	}
 
-	resp, body, err := req.Get("/", map[string]string{
+	resp, body, err := req.GetString("/", map[string]string{
 		"prefix":    prefix,
 		"delimiter": delimiter,
 		"max-keys":  "1000",
@@ -159,6 +160,7 @@ func (c *Client) ListFolder(folder string, recursive bool) ([]File, []Folder) {
 	return c.listObjectsLoop(prefix, recursive)
 }
 
+// DeleteObject deletes an object
 func (c *Client) DeleteObject(obj string) {
 	if obj == "" || obj[0] != '/' {
 		panic("invalid path")
@@ -180,6 +182,7 @@ func (c *Client) DeleteObject(obj string) {
 	}
 }
 
+// HeadObject heads an object
 func (c *Client) HeadObject(obj string) string {
 	if obj == "" || obj[0] != '/' {
 		panic("invalid path")
@@ -197,4 +200,11 @@ func (c *Client) HeadObject(obj string) string {
 	}
 
 	return s
+}
+
+// GetFile gets file contents and writes to w
+func (c *Client) GetFile(file string, w io.Writer) error {
+	req := newRequest("https://"+makePublicHost(ossBucket, ossLocation), ossBucket)
+	err := req.GetFile(file, w)
+	return err
 }

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"os"
 )
 
 var key = xAccessKey{
@@ -16,6 +16,5 @@ const (
 
 func main() {
 	oss := newClient(ossRootServer)
-	s := oss.HeadObject("/vim.js")
-	log.Printf("\n%s", s)
+	oss.GetFile("/xml.js", os.Stdout)
 }
