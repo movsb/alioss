@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -15,8 +16,8 @@ var key = xAccessKey{
 }
 
 const (
-	ossBucket   = "twofei-test"
-	ossLocation = "oss-cn-shenzhen"
+	ossBucket   = "twofei-wordpress"
+	ossLocation = "oss-cn-hangzhou"
 )
 
 func normalizeSlash(path string) string {
@@ -68,7 +69,7 @@ Syntax:
     object   upload       <directory>         <file>
     object   upload       <directory>         <directory>
 
-	object   delete       <file/directory>
+    object   delete       <file/directory>
 `
 
 	fmt.Fprintln(os.Stderr, s)
@@ -332,7 +333,103 @@ func eval(argc int, argv []string) {
 					}
 				}
 			} else if cmd == "upload" {
+				if argc >= 4 {
+					dst := normalizeSlash(argv[2])
+					if dst[0] != '/' {
+						panic("bad remote path")
+					}
 
+					src := normalizeSlash(argv[3])
+					var statSrc os.FileInfo
+					if statSrc, err = os.Stat(src); os.IsNotExist(err) {
+						panic("No such file or directory")
+					}
+
+					if !statSrc.IsDir() {
+						remotePath := ""
+						isDstFolder := dst[len(dst)-1] == '/'
+
+						if isDstFolder {
+							remoteDir := dst[:len(dst)-1]
+							remoteName := filepath.Base(src)
+							remotePath = remoteDir + "/" + remoteName
+						} else {
+							remotePath = dst
+						}
+
+						fp, err := os.Open(src)
+						if err != nil {
+							panic(err)
+						}
+
+						fmt.Printf("Uploading `%s' ...", src)
+						err = oss.PutFile(remotePath, fp)
+						if err != nil {
+							panic(err)
+						}
+						fmt.Println(" Done.")
+					} else if statSrc.IsDir() {
+						if dst[len(dst)-1] != '/' {
+							dst += "/"
+						}
+
+						var files []string
+
+						fmt.Print("Summary:", len(files), "file")
+						if len(files) > 1 {
+							fmt.Print("s")
+						}
+						fmt.Println(" will be uploaded.")
+
+						for _, file := range files {
+							path := src + "/" + file
+							fp, err := os.Open(path)
+							if err != nil {
+								panic(err)
+							}
+							fmt.Printf("  Uploading `%s' ...", file)
+							err = oss.PutFile(dst+file, fp)
+							if err != nil {
+								panic(err)
+							}
+							fmt.Println(" Done.")
+						}
+					}
+
+				}
+			} else if cmd == "delete" {
+				if argc >= 3 {
+					spec := normalizeSlash(argv[2])
+					files, folders := oss.ListPrefix(spec)
+					if findFile(files, spec) {
+						oss.DeleteObject(spec)
+						fmt.Println("Deleted.")
+						return
+					}
+
+					spec_back := spec
+					if spec_back[len(spec_back)-1] != '/' {
+						spec += "/"
+					}
+
+					if findFolder(folders, spec) {
+						for _, file := range files {
+							if strings.HasPrefix(file.Key, spec) {
+								fmt.Printf("Deleting `%s' ...", file)
+								oss.DeleteObject(file.Key)
+								fmt.Println(" Done.")
+							}
+						}
+
+						fmt.Printf("Deleting `%s' ...", spec)
+						oss.DeleteObject(spec)
+						fmt.Println(" Done.")
+						return
+					}
+
+					fmt.Fprintf(os.Stderr, "No such file or directory: `%s'.\n", spec_back)
+					return
+				}
 			}
 		}
 	}
@@ -340,7 +437,30 @@ func eval(argc int, argv []string) {
 
 func repl() {
 	help()
+
+	scn := bufio.NewScanner(os.Stdin)
+	for {
+		fmt.Print("$ ")
+		if !scn.Scan() {
+			if scn.Err() == nil {
+				fmt.Println()
+				break
+			} else {
+				panic(scn.Err())
+			}
+		}
+		line := scn.Text()
+		argv := strings.Fields(line)
+		eval(len(argv), argv)
+	}
 }
 
 func main() {
+	oss = newClient(ossRootServer)
+	if len(os.Args) > 1 {
+		argv := os.Args[1:]
+		eval(len(argv), argv)
+	} else {
+		repl()
+	}
 }
