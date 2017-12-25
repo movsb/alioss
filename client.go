@@ -209,7 +209,7 @@ func (c *Client) GetFile(file string, w io.Writer) error {
 	return err
 }
 
-//
+// PutFile puts a file from rc
 func (c *Client) PutFile(file string, rc io.ReadCloser) error {
 	req := newRequest("https://"+makePublicHost(ossBucket, ossLocation), ossBucket)
 	err := req.PutFile(file, rc)
