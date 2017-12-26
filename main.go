@@ -184,7 +184,7 @@ func eval(argc int, argv []string) {
 						link, err = makeURL(link, file, map[string]string{
 							"OSSAccessKeyId": key.key,
 							"Expires":        strconv.Itoa(expires),
-							"Signature":      signURL(&key, expires, file),
+							"Signature":      signURL(&key, expires, "/"+ossBucket+file),
 						})
 
 						if err != nil {
