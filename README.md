@@ -6,7 +6,7 @@ alioss
 ========
 工具: VSCode & Vim
 
-语言: Go & C++
+语言: Go
 
 平台: (All)
 
