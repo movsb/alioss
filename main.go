@@ -16,8 +16,8 @@ var key = xAccessKey{
 }
 
 const (
-	ossBucket   = "twofei-wordpress"
-	ossLocation = "oss-cn-hangzhou"
+	ossBucket   = "twofei-test"
+	ossLocation = "oss-cn-shenzhen"
 )
 
 func normalizeSlash(path string) string {
@@ -55,7 +55,9 @@ func help() {
 	s := `alioss - a simple Ali OSS manager
  
 Syntax:
+
     <type>   <command>    <[parameters...]>
+
     bucket   list
 
     object   list         <directory>
@@ -106,14 +108,14 @@ func eval(argc int, argv []string) {
 					if len(files) > 0 {
 						fmt.Println("Files:")
 						for _, file := range files {
-							fmt.Println(file)
+							fmt.Println(" ", file)
 						}
 					}
 
 					if len(folders) > 0 {
 						fmt.Println("Folders:")
 						for _, folder := range folders {
-							fmt.Println(folder)
+							fmt.Println(" ", folder)
 						}
 					}
 				}
@@ -130,49 +132,6 @@ func eval(argc int, argv []string) {
 					link += makePublicHost(ossBucket, ossLocation)
 
 					if argc >= 4 {
-						parseExpiration := func(expr string) int {
-							var day, hour, minute, second int
-							for i := 0; i < len(expr); i++ {
-								num := 0
-								unit := 's'
-
-								for ; i < len(expr); i++ {
-									if '0' <= expr[i] && expr[i] <= '9' {
-										num *= 10
-										num += int(expr[i] - '0')
-									} else {
-										break
-									}
-								}
-
-								if i < len(expr) {
-									unit = rune(expr[i])
-									i++
-								}
-
-								var p *int
-
-								switch unit {
-								case 'd':
-									p = &day
-								case 'h':
-									p = &hour
-								case 'm':
-									p = &minute
-								case 's':
-									p = &second
-								default:
-									return -1
-								}
-
-								*p = num
-							}
-
-							expiration := day*(24*60*60) + hour*(60*60) + minute*(60) + second*(1)
-
-							return expiration
-						}
-
 						expr := parseExpiration(argv[3])
 						if expr == -1 {
 							panic("bad expiration")
@@ -376,7 +335,10 @@ func eval(argc int, argv []string) {
 							dst += "/"
 						}
 
-						var files []string
+						files, err := listFiles(src)
+						if err != nil {
+							panic(err)
+						}
 
 						fmt.Print("Summary:", len(files), "file")
 						if len(files) > 1 {
