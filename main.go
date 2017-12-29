@@ -79,7 +79,9 @@ Syntax:
 
 var oss *Client
 
-func eval(argc int, argv []string) {
+func eval(argv []string) {
+	argc := len(argv)
+
 	if argc < 1 {
 		return
 	}
@@ -416,7 +418,7 @@ func repl() {
 		}
 		line := scn.Text()
 		argv := strings.Fields(line)
-		eval(len(argv), argv)
+		eval(argv)
 	}
 }
 
@@ -424,7 +426,7 @@ func main() {
 	oss = newClient(ossRootServer)
 	if len(os.Args) > 1 {
 		argv := os.Args[1:]
-		eval(len(argv), argv)
+		eval(argv)
 	} else {
 		repl()
 	}
