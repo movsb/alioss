@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -10,13 +9,9 @@ import (
 )
 
 func gmdate() string {
-	n := time.Now().UTC()
-	s := fmt.Sprintf("%s, %02d %s %04d %02d:%02d:%02d GMT",
-		n.Format("Sat"),
-		n.Day(), n.Format("Jan"), n.Year(),
-		n.Hour(), n.Minute(), n.Second(),
-	)
-	return s
+	loc, _ := time.LoadLocation("GMT")
+	tim := time.Now().In(loc).Format(time.RFC1123)
+	return tim
 }
 
 type xRequest struct {
