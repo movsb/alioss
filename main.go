@@ -374,8 +374,8 @@ func eval(argv []string) {
 						return
 					}
 
-					spec_back := spec
-					if spec_back[len(spec_back)-1] != '/' {
+					specBack := spec
+					if specBack[len(specBack)-1] != '/' {
 						spec += "/"
 					}
 
@@ -394,7 +394,7 @@ func eval(argv []string) {
 						return
 					}
 
-					fmt.Fprintf(os.Stderr, "No such file or directory: `%s'.\n", spec_back)
+					fmt.Fprintf(os.Stderr, "No such file or directory: `%s'.\n", specBack)
 					return
 				}
 			}
