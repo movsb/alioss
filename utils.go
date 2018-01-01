@@ -3,6 +3,8 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"runtime"
+	"strings"
 )
 
 // parseExpiration parses expression as expiration
@@ -52,12 +54,16 @@ func parseExpiration(expr string) int {
 
 func listFiles(dir string) ([]string, error) {
 	var files []string
+	var isWindows = runtime.GOOS == "windows"
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, e error) error {
 		if e != nil {
 			return filepath.SkipDir
 		}
 
 		if !info.IsDir() {
+			if isWindows {
+				path = strings.Replace(path, `\`, "/", -1)
+			}
 			files = append(files, path)
 		}
 		return nil

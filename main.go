@@ -345,7 +345,7 @@ func eval(argv []string) {
 							panic(err)
 						}
 
-						fmt.Print("Summary:", len(files), "file")
+						fmt.Print("Summary: ", len(files), " file")
 						if len(files) > 1 {
 							fmt.Print("s")
 						}
