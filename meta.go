@@ -51,18 +51,7 @@ func (f *File) dirName() string {
 
 // String implements Stringer
 func (f *File) String() string {
-	return fmt.Sprintf(
-		`Name: %s
-Size: %s
-Type: %s
-ETag: %s
-
-`,
-		f.Key,
-		f.Size,
-		f.Type,
-		f.ETag,
-	)
+	return fmt.Sprintf(`Name: %-20s, Size: %8s`, f.Key, f.Size)
 }
 
 // Folder represents a folder object

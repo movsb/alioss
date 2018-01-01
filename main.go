@@ -111,7 +111,7 @@ func eval(argv []string) {
 					if len(files) > 0 {
 						fmt.Println("Files:")
 						for _, file := range files {
-							fmt.Println(" ", file)
+							fmt.Println(" ", &file)
 						}
 					}
 
