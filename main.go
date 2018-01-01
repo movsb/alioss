@@ -225,6 +225,8 @@ func eval(argv []string) {
 							panic(err)
 						}
 
+						defer fp.Close()
+
 						err = oss.GetFile(inputPath, fp)
 						if err != nil {
 							panic(err)
@@ -286,6 +288,7 @@ func eval(argv []string) {
 								if err != nil {
 									panic(err)
 								}
+								defer fp.Close()
 								fmt.Printf("  Downloading `%s' ...", file.Key)
 								err = oss.GetFile(file.Key, fp)
 								if err != nil {
