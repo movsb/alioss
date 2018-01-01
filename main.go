@@ -3,8 +3,11 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -418,7 +421,36 @@ func repl() {
 		}
 		line := scn.Text()
 		argv := strings.Fields(line)
-		eval(argv)
+
+		if len(argv) <= 0 {
+			continue
+		}
+
+		if argv[0] == "!" {
+			if len(argv) >= 2 {
+				name := ""
+				args := []string{}
+				if runtime.GOOS == "windows" {
+					name = "cmd"
+					args = append(args, "/c")
+					args = append(args, argv[1:]...)
+				} else {
+					name = "sh"
+					args = append(args, "-c")
+					args = append(args, argv[1:]...)
+				}
+
+				cmd := exec.Command(name, args...)
+				out, err := cmd.CombinedOutput()
+				if err != nil {
+					log.Println(err)
+				} else {
+					fmt.Print(string(out))
+				}
+			}
+		} else {
+			eval(argv)
+		}
 	}
 }
 
