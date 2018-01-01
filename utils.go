@@ -53,10 +53,18 @@ func parseExpiration(expr string) int {
 }
 
 // Lists  all files (no folders) in a folder
-// returned files include dir as its prefix (omit ./)
-func listFiles(dir string) ([]string, error) {
+// returns the prefix dir path, files and error
+// returned files does not include dir(cleaned) as its prefix
+func listFiles(dir string) (string, []string, error) {
 	var files []string
 	var isWindows = runtime.GOOS == "windows"
+	var cleanedDir = filepath.Clean(dir)
+	var cleanedDirLen = 0
+	if cleanedDir == "." || cleanedDir == "./" || cleanedDir == `.\` {
+		cleanedDirLen = 0
+	} else {
+		cleanedDirLen = len(cleanedDir) + 1
+	}
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, e error) error {
 		if e != nil {
 			return filepath.SkipDir
@@ -66,9 +74,9 @@ func listFiles(dir string) ([]string, error) {
 			if isWindows {
 				path = strings.Replace(path, `\`, "/", -1)
 			}
-			files = append(files, path)
+			files = append(files, path[cleanedDirLen:])
 		}
 		return nil
 	})
-	return files, err
+	return cleanedDir, files, err
 }

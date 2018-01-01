@@ -70,9 +70,7 @@ Syntax:
     object   download     <file>              [file/directory]
     object   download     <directory>         [directory]
 
-    object   upload       <file>              <file>
-    object   upload       <directory>         <file>
-    object   upload       <directory>         <directory>
+    object   upload       <directory>         <files.../directories...>
 
     object   delete       <file/directory>
 `
@@ -307,65 +305,62 @@ func eval(argv []string) {
 						panic("bad remote path")
 					}
 
-					src := normalizeSlash(argv[3])
-					var statSrc os.FileInfo
-					if statSrc, err = os.Stat(src); os.IsNotExist(err) {
-						panic("No such file or directory")
+					// dst is always a folder
+					// so prefix it a /
+					if dst[len(dst)-1] != '/' {
+						dst += "/"
 					}
 
-					if !statSrc.IsDir() {
-						remotePath := ""
-						isDstFolder := dst[len(dst)-1] == '/'
+					for _, src := range argv[3:] {
+						src = normalizeSlash(src)
 
-						if isDstFolder {
-							remoteDir := dst[:len(dst)-1]
-							remoteName := filepath.Base(src)
-							remotePath = remoteDir + "/" + remoteName
-						} else {
-							remotePath = dst
+						var statSrc os.FileInfo
+						if statSrc, err = os.Stat(src); os.IsNotExist(err) {
+							log.Println("No such file or directory")
+							continue
 						}
 
-						fp, err := os.Open(src)
-						if err != nil {
-							panic(err)
-						}
+						if !statSrc.IsDir() {
+							remotePath := dst + filepath.Base(src)
 
-						fmt.Printf("Uploading `%s' ...", src)
-						err = oss.PutFile(remotePath, fp)
-						if err != nil {
-							panic(err)
-						}
-						fmt.Println(" Done.")
-					} else if statSrc.IsDir() {
-						if dst[len(dst)-1] != '/' {
-							dst += "/"
-						}
-
-						files, err := listFiles(src)
-						if err != nil {
-							panic(err)
-						}
-
-						fmt.Print("Summary: ", len(files), " file")
-						if len(files) > 1 {
-							fmt.Print("s")
-						}
-						fmt.Println(" will be uploaded.")
-
-						for _, file := range files {
-							fp, err := os.Open(file)
+							fp, err := os.Open(src)
 							if err != nil {
 								panic(err)
 							}
-							fmt.Printf("  Uploading `%s' ...", file)
-							err = oss.PutFile(dst+file, fp)
+
+							fmt.Printf("Uploading `%s' ...", src)
+							err = oss.PutFile(remotePath, fp)
 							if err != nil {
 								panic(err)
 							}
 							fmt.Println(" Done.")
+						} else if statSrc.IsDir() {
+							prefix, files, err := listFiles(src)
+							if err != nil {
+								panic(err)
+							}
+
+							fmt.Print("Summary: ", len(files), " file")
+							if len(files) > 1 {
+								fmt.Print("s")
+							}
+							fmt.Println(" will be uploaded.")
+
+							for _, file := range files {
+								fp, err := os.Open(prefix + "/" + file)
+								if err != nil {
+									panic(err)
+								}
+								defer fp.Close()
+								fmt.Printf("  Uploading `%s' ...", file)
+								err = oss.PutFile(dst+file, fp)
+								if err != nil {
+									panic(err)
+								}
+								fmt.Println(" Done.")
+							}
 						}
 					}
-
 				}
 			} else if cmd == "delete" {
 				if argc >= 3 {
