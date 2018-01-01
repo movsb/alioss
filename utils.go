@@ -52,6 +52,8 @@ func parseExpiration(expr string) int {
 	return expiration
 }
 
+// Lists  all files (no folders) in a folder
+// returned files include dir as its prefix (omit ./)
 func listFiles(dir string) ([]string, error) {
 	var files []string
 	var isWindows = runtime.GOOS == "windows"

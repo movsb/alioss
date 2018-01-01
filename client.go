@@ -188,13 +188,13 @@ func (c *Client) DeleteObject(obj string) {
 }
 
 // HeadObject heads an object
-func (c *Client) HeadObject(obj string) string {
+func (c *Client) HeadObject(obj string) (int, string) {
 	if obj == "" || obj[0] != '/' {
 		panic("invalid path")
 	}
 
 	req := newRequest("https://"+makePublicHost(ossBucket, ossLocation), ossBucket)
-	head, err := req.Head(obj)
+	status, head, err := req.Head(obj)
 	if err != nil {
 		panic(err)
 	}
@@ -204,7 +204,7 @@ func (c *Client) HeadObject(obj string) string {
 		s += fmt.Sprintf("%-24s: %s\n", k, v[0])
 	}
 
-	return s
+	return status, s
 }
 
 // GetFile gets file contents and writes to w

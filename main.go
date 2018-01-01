@@ -127,7 +127,8 @@ func eval(argv []string) {
 			} else if cmd == "head" {
 				if argc >= 3 {
 					file := argv[2]
-					head := oss.HeadObject(file)
+					status, head := oss.HeadObject(file)
+					fmt.Println("Status: ", status)
 					fmt.Println(head)
 				}
 			} else if cmd == "sign" {
@@ -352,8 +353,7 @@ func eval(argv []string) {
 						fmt.Println(" will be uploaded.")
 
 						for _, file := range files {
-							path := src + "/" + file
-							fp, err := os.Open(path)
+							fp, err := os.Open(file)
 							if err != nil {
 								panic(err)
 							}

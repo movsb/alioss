@@ -65,12 +65,12 @@ func (r *xRequest) Delete(resource string) (*http.Response, []byte, error) {
 	return r.Do("DELETE", resource, nil, nil, nil)
 }
 
-func (r *xRequest) Head(resource string) (http.Header, error) {
+func (r *xRequest) Head(resource string) (int, http.Header, error) {
 	resp, _, err := r.Do("HEAD", resource, nil, nil, nil)
 	if err != nil {
-		return nil, err
+		return 0, nil, err
 	}
-	return resp.Header, nil
+	return resp.StatusCode, resp.Header, nil
 }
 
 func (r *xRequest) Do(method string, resource string, queries map[string]string, rc io.ReadCloser, w io.Writer) (*http.Response, []byte, error) {
