@@ -29,6 +29,26 @@ func newRequest(host string, bucket string) *xRequest {
 	return r
 }
 
+// See https://github.com/aliyun/aliyun-oss-csharp-sdk/blob/cb96bae541499850c185d120f5147b3c64138d8c/sdk/Util/HttpUtils.cs#L22
+// See https://github.com/aliyun/aliyun-oss-csharp-sdk/blob/cb96bae541499850c185d120f5147b3c64138d8c/sdk/Util/OssUtils.cs#L179
+func escapePath(path string) string {
+	s := make([]byte, len(path)*3)
+	j := 0
+	for i := 0; i < len(path); i++ {
+		c := path[i]
+		if '0' <= c && c <= '9' || 'a' <= c && c <= 'z' || 'A' <= c && c <= 'Z' || c == '/' || c == '-' || c == '_' || c == '.' || c == '~' {
+			s[j] = c
+			j++
+		} else {
+			s[j+0] = '%'
+			s[j+1] = "0123456789ABCDEF"[c>>4]
+			s[j+2] = "0123456789ABCDEF"[c&15]
+			j += 3
+		}
+	}
+	return string(s[0:j])
+}
+
 func makeURL(host, resource string, queries map[string]string) (string, error) {
 	u, err := url.Parse(host)
 	if err != nil {
@@ -36,6 +56,7 @@ func makeURL(host, resource string, queries map[string]string) (string, error) {
 	}
 
 	u.Path = resource
+	u.RawPath = escapePath(resource)
 
 	q := u.Query()
 	for k, v := range queries {
