@@ -49,7 +49,7 @@ func (c *Client) ListBuckets() []Bucket {
 }
 
 func (c *Client) listObjectsInternal(prefix, marker string, recursive bool, files *[]File, folders *[]Folder, nextMarker *string, prefixes *map[string]bool) bool {
-	req := newRequest("https://"+makePublicHost(ossBucket, ossLocation), ossBucket)
+	req := newRequest(makePublicHost(ossBucket, ossLocation), ossBucket)
 	delimiter := ""
 	if !recursive {
 		delimiter = "/"
@@ -171,7 +171,7 @@ func (c *Client) DeleteObject(obj string) {
 		panic("invalid path")
 	}
 
-	req := newRequest("https://"+makePublicHost(ossBucket, ossLocation), ossBucket)
+	req := newRequest(makePublicHost(ossBucket, ossLocation), ossBucket)
 	resp, body, err := req.Delete(obj)
 
 	if err != nil {
@@ -193,7 +193,7 @@ func (c *Client) HeadObject(obj string) (int, string) {
 		panic("invalid path")
 	}
 
-	req := newRequest("https://"+makePublicHost(ossBucket, ossLocation), ossBucket)
+	req := newRequest(makePublicHost(ossBucket, ossLocation), ossBucket)
 	status, head, err := req.Head(obj)
 	if err != nil {
 		panic(err)
@@ -209,14 +209,14 @@ func (c *Client) HeadObject(obj string) (int, string) {
 
 // GetFile gets file contents and writes to w
 func (c *Client) GetFile(file string, w io.Writer) error {
-	req := newRequest("https://"+makePublicHost(ossBucket, ossLocation), ossBucket)
+	req := newRequest(makePublicHost(ossBucket, ossLocation), ossBucket)
 	err := req.GetFile(file, w)
 	return err
 }
 
 // PutFile puts a file from rc
 func (c *Client) PutFile(file string, rc io.ReadCloser) error {
-	req := newRequest("https://"+makePublicHost(ossBucket, ossLocation), ossBucket)
+	req := newRequest(makePublicHost(ossBucket, ossLocation), ossBucket)
 	err := req.PutFile(file, rc)
 	return err
 }

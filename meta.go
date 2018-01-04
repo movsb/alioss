@@ -11,7 +11,7 @@ const (
 )
 
 func makePublicHost(bucketName, bucketLocation string) string {
-	return bucketName + "." + bucketLocation + ossServerSuffix
+	return "https://" + bucketName + "." + bucketLocation + ossServerSuffix
 }
 
 // Owner represents an owner of a file, a folder, or a bucket

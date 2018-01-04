@@ -132,8 +132,7 @@ func eval(argv []string) {
 			} else if cmd == "sign" {
 				if argc >= 3 {
 					file := argv[2]
-					link := "https://"
-					link += makePublicHost(ossBucket, ossLocation)
+					link := makePublicHost(ossBucket, ossLocation)
 
 					if argc >= 4 {
 						expr := parseExpiration(argv[3])
