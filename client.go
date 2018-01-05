@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"strings"
 )
 
 // Client represents an alioss client
@@ -218,5 +219,15 @@ func (c *Client) GetFile(file string, w io.Writer) error {
 func (c *Client) PutFile(file string, rc io.ReadCloser) error {
 	req := newRequest(makePublicHost(ossBucket, ossLocation), ossBucket)
 	err := req.PutFile(file, rc)
+	return err
+}
+
+// CreateFolder creates a folder named path
+func (c *Client) CreateFolder(path string) error {
+	if !strings.HasSuffix(path, "/") {
+		path += "/"
+	}
+	req := newRequest(makePublicHost(ossBucket, ossLocation), ossBucket)
+	err := req.CreateFolder(path)
 	return err
 }

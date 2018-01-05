@@ -82,6 +82,11 @@ func (r *xRequest) PutFile(resource string, rc io.ReadCloser) error {
 	return err
 }
 
+func (r *xRequest) CreateFolder(resource string) error {
+	_, _, err := r.Do("PUT", resource, nil, nil, nil)
+	return err
+}
+
 func (r *xRequest) Delete(resource string) (*http.Response, []byte, error) {
 	return r.Do("DELETE", resource, nil, nil, nil)
 }

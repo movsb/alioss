@@ -64,6 +64,7 @@ Syntax:
     bucket   list
 
     object   list         <directory>
+    object   mkdir        <directory>
     object   head         <file>
     object   sign         <file>              [expiration]
 
@@ -120,6 +121,16 @@ func eval(argv []string) {
 						for _, folder := range folders {
 							fmt.Println(" ", folder)
 						}
+					}
+				}
+			} else if cmd == "mkdir" {
+				if argc >= 3 {
+					path := argv[2]
+					err := oss.CreateFolder(path)
+					if err != nil {
+						panic(err)
+					} else {
+						fmt.Println("Created.")
 					}
 				}
 			} else if cmd == "head" {
