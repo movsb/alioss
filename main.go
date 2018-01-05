@@ -393,7 +393,7 @@ func eval(argv []string) {
 					if findFolder(folders, spec) {
 						for _, file := range files {
 							if strings.HasPrefix(file.Key, spec) {
-								fmt.Printf("Deleting `%s' ...", file)
+								fmt.Printf("Deleting `%s' ...", file.Key)
 								oss.DeleteObject(file.Key)
 								fmt.Println(" Done.")
 							}

@@ -8,6 +8,10 @@ import (
 )
 
 // parseExpiration parses expression as expiration
+// Expiration is expressed as:
+//		?d?h?m?s
+// where:
+//		d: day, h: hour, m: minute, s: second
 func parseExpiration(expr string) int {
 	var day, hour, minute, second int
 
