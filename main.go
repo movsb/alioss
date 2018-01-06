@@ -13,14 +13,11 @@ import (
 	"time"
 )
 
-var key = xAccessKey{
-	key:    "",
-	secret: "",
-}
-
-const (
-	ossBucket   = "twofei-test"
-	ossLocation = "oss-cn-shenzhen"
+var (
+	key         xAccessKey
+	ossBucket   string
+	ossLocation string
+	config      = make(map[string]string)
 )
 
 func normalizeSlash(path string) string {
@@ -462,7 +459,34 @@ func repl() {
 	}
 }
 
+func readConfig() {
+	file, err := os.Open("./alioss.conf")
+	if err != nil {
+		panic("config file alioss.conf cannot be found.")
+	}
+
+	defer file.Close()
+
+	scn := bufio.NewScanner(file)
+
+	for scn.Scan() {
+		line := scn.Text()
+		toks := strings.SplitN(line, ":", 2)
+		if len(toks) != 2 {
+			continue
+		}
+		config[toks[0]] = toks[1]
+	}
+
+	key.key = config["key"]
+	key.secret = config["secret"]
+	ossBucket = config["bucket"]
+	ossLocation = config["location"]
+}
+
 func main() {
+	readConfig()
+
 	oss = newClient(ossRootServer)
 	if len(os.Args) > 1 {
 		argv := os.Args[1:]
