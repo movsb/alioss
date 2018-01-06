@@ -8,16 +8,13 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
-	"strconv"
 	"strings"
 	"time"
 )
 
 var (
-	key         xAccessKey
-	ossBucket   string
-	ossLocation string
-	config      = make(map[string]string)
+	key    xAccessKey
+	config = make(map[string]string)
 )
 
 func normalizeSlash(path string) string {
@@ -58,8 +55,6 @@ Syntax:
 
     <type>   <command>    <[parameters...]>
 
-    bucket   list
-
     object   list         <directory>
     object   mkdir        <directory>
     object   head         <file>
@@ -89,17 +84,7 @@ func eval(argv []string) {
 
 	object := argv[0]
 
-	if object == "bucket" {
-		if argc >= 2 {
-			cmd := argv[1]
-			if cmd == "list" {
-				bkts := oss.ListBuckets()
-				for _, bkt := range bkts {
-					fmt.Println(bkt)
-				}
-			}
-		}
-	} else if object == "object" {
+	if object == "object" {
 		if argc >= 2 {
 			cmd := argv[1]
 			if cmd == "list" {
@@ -140,32 +125,19 @@ func eval(argv []string) {
 			} else if cmd == "sign" {
 				if argc >= 3 {
 					file := argv[2]
-					link := makePublicHost(ossBucket, ossLocation)
+					expr := 0
 
 					if argc >= 4 {
-						expr := parseExpiration(argv[3])
+						expr = parseExpiration(argv[3])
 						if expr == -1 {
 							panic("bad expiration")
 						}
 
 						current := int(time.Now().UTC().Unix())
-						expires := current + expr
-
-						link, err = makeURL(link, file, map[string]string{
-							"OSSAccessKeyId": key.key,
-							"Expires":        strconv.Itoa(expires),
-							"Signature":      signURL(&key, expires, "/"+ossBucket+file),
-						})
-
-						if err != nil {
-							panic(err)
-						}
-					} else {
-						link, err = makeURL(link, file, nil)
-						if err != nil {
-							panic(err)
-						}
+						expr += current
 					}
+
+					link := oss.MakeShare(file, expr)
 
 					fmt.Println(link)
 				}
@@ -480,14 +452,16 @@ func readConfig() {
 
 	key.key = config["key"]
 	key.secret = config["secret"]
-	ossBucket = config["bucket"]
-	ossLocation = config["location"]
 }
 
 func main() {
 	readConfig()
 
-	oss = newClient(ossRootServer)
+	oss = newClient(
+		config["bucket"],
+		config["location"],
+	)
+
 	if len(os.Args) > 1 {
 		argv := os.Args[1:]
 		eval(argv)

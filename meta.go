@@ -6,7 +6,6 @@ import (
 )
 
 const (
-	ossRootServer   = "https://oss.aliyuncs.com"
 	ossServerSuffix = ".aliyuncs.com"
 )
 
@@ -18,13 +17,6 @@ func makePublicHost(bucketName, bucketLocation string) string {
 type Owner struct {
 	ID          string
 	DisplayName string
-}
-
-// Bucket represents a set of properties of a bucket
-type Bucket struct {
-	Name         string
-	Location     string
-	CreationDate string
 }
 
 // File represents a file object

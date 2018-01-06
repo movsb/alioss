@@ -5,52 +5,34 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"strconv"
 	"strings"
 )
 
 // Client represents an alioss client
 type Client struct {
-	root *xRequest
+	bucket   string
+	location string
 }
 
-func newClient(host string) *Client {
-	c := &Client{}
-	c.root = newRequest(host, "")
+func newClient(bucket string, location string) *Client {
+	c := &Client{
+		bucket:   bucket,
+		location: location,
+	}
 	return c
 }
 
-// ListBuckets lists all buckets that owned by current
-// key/secret pair owner
-func (c *Client) ListBuckets() []Bucket {
-	resp, body, err := c.root.GetString("/", nil)
-	if err != nil {
-		panic(err)
-	}
+func (c *Client) getHost() string {
+	return makePublicHost(c.bucket, c.location)
+}
 
-	if resp.StatusCode != 200 {
-		xerr, err := parseErrorXML(body)
-		if err != nil {
-			panic(err)
-		}
-		log.Fatalln(xerr)
-	}
-
-	type ListAllMyBucketsResult struct {
-		Owner   Owner
-		Buckets []Bucket `xml:"Buckets>Bucket"`
-	}
-
-	bkts := &ListAllMyBucketsResult{}
-	err = xml.Unmarshal(body, bkts)
-	if err != nil {
-		panic(err)
-	}
-
-	return bkts.Buckets
+func (c *Client) newRequest() *xRequest {
+	return newRequest(makePublicHost(c.bucket, c.location), c.bucket)
 }
 
 func (c *Client) listObjectsInternal(prefix, marker string, recursive bool, files *[]File, folders *[]Folder, nextMarker *string, prefixes *map[string]bool) bool {
-	req := newRequest(makePublicHost(ossBucket, ossLocation), ossBucket)
+	req := c.newRequest()
 	delimiter := ""
 	if !recursive {
 		delimiter = "/"
@@ -172,7 +154,7 @@ func (c *Client) DeleteObject(obj string) {
 		panic("invalid path")
 	}
 
-	req := newRequest(makePublicHost(ossBucket, ossLocation), ossBucket)
+	req := c.newRequest()
 	resp, body, err := req.Delete(obj)
 
 	if err != nil {
@@ -194,7 +176,7 @@ func (c *Client) HeadObject(obj string) (int, string) {
 		panic("invalid path")
 	}
 
-	req := newRequest(makePublicHost(ossBucket, ossLocation), ossBucket)
+	req := c.newRequest()
 	status, head, err := req.Head(obj)
 	if err != nil {
 		panic(err)
@@ -210,14 +192,14 @@ func (c *Client) HeadObject(obj string) (int, string) {
 
 // GetFile gets file contents and writes to w
 func (c *Client) GetFile(file string, w io.Writer) error {
-	req := newRequest(makePublicHost(ossBucket, ossLocation), ossBucket)
+	req := c.newRequest()
 	err := req.GetFile(file, w)
 	return err
 }
 
 // PutFile puts a file from rc
 func (c *Client) PutFile(file string, rc io.ReadCloser) error {
-	req := newRequest(makePublicHost(ossBucket, ossLocation), ossBucket)
+	req := c.newRequest()
 	err := req.PutFile(file, rc)
 	return err
 }
@@ -227,7 +209,24 @@ func (c *Client) CreateFolder(path string) error {
 	if !strings.HasSuffix(path, "/") {
 		path += "/"
 	}
-	req := newRequest(makePublicHost(ossBucket, ossLocation), ossBucket)
+	req := c.newRequest()
 	err := req.CreateFolder(path)
 	return err
+}
+
+// MakeShare creates a sharing link with expiration set to expiration
+func (c *Client) MakeShare(resource string, expiration int) string {
+	link := ""
+
+	if expiration > 0 {
+		link, _ = makeURL(c.getHost(), resource, map[string]string{
+			"OSSAccessKeyId": key.key,
+			"Expires":        strconv.Itoa(expiration),
+			"Signature":      signURL(&key, expiration, "/"+c.bucket+resource),
+		})
+	} else {
+		link, _ = makeURL(c.getHost(), resource, nil)
+	}
+
+	return link
 }
