@@ -15,14 +15,16 @@ func gmdate() string {
 }
 
 type xRequest struct {
+	key    *xAccessKey
 	host   string
 	bucket string
 	c      http.Client
 }
 
-func newRequest(host string, bucket string) *xRequest {
+func newRequest(host string, bucket string, key *xAccessKey) *xRequest {
 	r := &xRequest{}
 	r.host = host
+	r.key = key
 	if bucket != "" {
 		r.bucket = "/" + bucket
 	}
@@ -114,7 +116,7 @@ func (r *xRequest) Do(method string, resource string, queries map[string]string,
 	date := gmdate()
 	req.Header.Add("Date", date)
 
-	auth := signHead(&key, method, date, r.bucket+resource)
+	auth := signHead(r.key, method, date, r.bucket+resource)
 	req.Header.Add("Authorization", auth)
 
 	resp, err := r.c.Do(req)

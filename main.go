@@ -13,7 +13,6 @@ import (
 )
 
 var (
-	key    xAccessKey
 	config = make(map[string]string)
 )
 
@@ -449,9 +448,6 @@ func readConfig() {
 		}
 		config[toks[0]] = toks[1]
 	}
-
-	key.key = config["key"]
-	key.secret = config["secret"]
 }
 
 func main() {
@@ -460,6 +456,8 @@ func main() {
 	oss = newClient(
 		config["bucket"],
 		config["location"],
+		config["key"],
+		config["secret"],
 	)
 
 	if len(os.Args) > 1 {

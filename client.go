@@ -11,12 +11,14 @@ import (
 
 // Client represents an alioss client
 type Client struct {
+	key      xAccessKey
 	bucket   string
 	location string
 }
 
-func newClient(bucket string, location string) *Client {
+func newClient(bucket, location, key, secret string) *Client {
 	c := &Client{
+		key:      xAccessKey{key: key, secret: secret},
 		bucket:   bucket,
 		location: location,
 	}
@@ -28,7 +30,7 @@ func (c *Client) getHost() string {
 }
 
 func (c *Client) newRequest() *xRequest {
-	return newRequest(makePublicHost(c.bucket, c.location), c.bucket)
+	return newRequest(makePublicHost(c.bucket, c.location), c.bucket, &c.key)
 }
 
 func (c *Client) listObjectsInternal(prefix, marker string, recursive bool, files *[]File, folders *[]Folder, nextMarker *string, prefixes *map[string]bool) bool {
@@ -220,9 +222,9 @@ func (c *Client) MakeShare(resource string, expiration int) string {
 
 	if expiration > 0 {
 		link, _ = makeURL(c.getHost(), resource, map[string]string{
-			"OSSAccessKeyId": key.key,
+			"OSSAccessKeyId": c.key.key,
 			"Expires":        strconv.Itoa(expiration),
-			"Signature":      signURL(&key, expiration, "/"+c.bucket+resource),
+			"Signature":      signURL(&c.key, expiration, "/"+c.bucket+resource),
 		})
 	} else {
 		link, _ = makeURL(c.getHost(), resource, nil)
