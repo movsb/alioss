@@ -374,11 +374,15 @@ func eval(argv []string) {
 							}
 						}
 
-						fmt.Printf("Deleting `%s' ...", spec)
-						if err = oss.DeleteObject(spec); err != nil {
-							panic(err)
+						// Deleting / is deleting a bucket
+						if spec != "/" {
+							fmt.Printf("Deleting `%s' ...", spec)
+							if err = oss.DeleteObject(spec); err != nil {
+								panic(err)
+							}
+							fmt.Println(" Done.")
 						}
-						fmt.Println(" Done.")
+						return
 						return
 					}
 

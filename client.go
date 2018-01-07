@@ -149,6 +149,11 @@ func (c *Client) ListFolder(folder string, recursive bool) ([]File, []Folder) {
 
 // DeleteObject deletes an object
 func (c *Client) DeleteObject(obj string) error {
+	// cannot delete /
+	if obj == "/" {
+		return nil
+	}
+
 	req := c.newRequest()
 	resp, body, err := req.Do("DELETE", obj, nil, nil, nil)
 
