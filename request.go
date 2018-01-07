@@ -70,37 +70,6 @@ func makeURL(host, resource string, queries map[string]string) (string, error) {
 	return u.String(), nil
 }
 
-func (r *xRequest) GetString(resource string, queries map[string]string) (*http.Response, []byte, error) {
-	return r.Do("GET", resource, queries, nil, nil)
-}
-
-func (r *xRequest) GetFile(resource string, w io.Writer) error {
-	_, _, err := r.Do("GET", resource, nil, nil, w)
-	return err
-}
-
-func (r *xRequest) PutFile(resource string, rc io.ReadCloser) error {
-	_, _, err := r.Do("PUT", resource, nil, rc, nil)
-	return err
-}
-
-func (r *xRequest) CreateFolder(resource string) error {
-	_, _, err := r.Do("PUT", resource, nil, nil, nil)
-	return err
-}
-
-func (r *xRequest) Delete(resource string) (*http.Response, []byte, error) {
-	return r.Do("DELETE", resource, nil, nil, nil)
-}
-
-func (r *xRequest) Head(resource string) (int, http.Header, error) {
-	resp, _, err := r.Do("HEAD", resource, nil, nil, nil)
-	if err != nil {
-		return 0, nil, err
-	}
-	return resp.StatusCode, resp.Header, nil
-}
-
 func (r *xRequest) Do(method string, resource string, queries map[string]string, rc io.ReadCloser, w io.Writer) (*http.Response, []byte, error) {
 	u, err := makeURL(r.host, resource, queries)
 	if err != nil {
@@ -126,7 +95,7 @@ func (r *xRequest) Do(method string, resource string, queries map[string]string,
 
 	defer resp.Body.Close()
 
-	if w == nil {
+	if w == nil || resp.StatusCode != 200 {
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			return nil, nil, err

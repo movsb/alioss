@@ -117,7 +117,10 @@ func eval(argv []string) {
 			} else if cmd == "head" {
 				if argc >= 3 {
 					file := argv[2]
-					status, head := oss.HeadObject(file)
+					status, head, err := oss.HeadObject(file)
+					if err != nil {
+						panic(err)
+					}
 					fmt.Println("Status: ", status)
 					fmt.Println(head)
 				}
@@ -348,7 +351,9 @@ func eval(argv []string) {
 					spec := normalizeSlash(argv[2])
 					files, folders := oss.ListPrefix(spec)
 					if findFile(files, spec) {
-						oss.DeleteObject(spec)
+						if err = oss.DeleteObject(spec); err != nil {
+							panic(err)
+						}
 						fmt.Println("Deleted.")
 						return
 					}
@@ -362,13 +367,17 @@ func eval(argv []string) {
 						for _, file := range files {
 							if strings.HasPrefix(file.Key, spec) {
 								fmt.Printf("Deleting `%s' ...", file.Key)
-								oss.DeleteObject(file.Key)
+								if err = oss.DeleteObject(file.Key); err != nil {
+									panic(err)
+								}
 								fmt.Println(" Done.")
 							}
 						}
 
 						fmt.Printf("Deleting `%s' ...", spec)
-						oss.DeleteObject(spec)
+						if err = oss.DeleteObject(spec); err != nil {
+							panic(err)
+						}
 						fmt.Println(" Done.")
 						return
 					}

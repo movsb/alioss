@@ -41,12 +41,12 @@ func (c *Client) listObjectsInternal(prefix, marker string, recursive bool, file
 		delimiter = "/"
 	}
 
-	resp, body, err := req.GetString("/", map[string]string{
+	resp, body, err := req.Do("GET", "/", map[string]string{
 		"prefix":    prefix,
 		"delimiter": delimiter,
 		"max-keys":  "1000",
 		"marker":    marker,
-	})
+	}, nil, nil)
 
 	if err != nil {
 		panic(err)
@@ -148,61 +148,73 @@ func (c *Client) ListFolder(folder string, recursive bool) ([]File, []Folder) {
 }
 
 // DeleteObject deletes an object
-func (c *Client) DeleteObject(obj string) {
-	if obj == "" || obj[0] != '/' {
-		panic("invalid path")
-	}
-
+func (c *Client) DeleteObject(obj string) error {
 	req := c.newRequest()
-	resp, body, err := req.Delete(obj)
+	resp, body, err := req.Do("DELETE", obj, nil, nil, nil)
 
 	if err != nil {
-		panic(err)
+		return &OSSError{err: err}
 	}
 
 	if resp.StatusCode != 204 && resp.StatusCode != 200 {
-		panic(string(body))
+		return &OSSError{msg: string(body)}
 	}
+
+	return nil
 }
 
 // HeadObject heads an object
-func (c *Client) HeadObject(obj string) (int, string) {
-	if obj == "" || obj[0] != '/' {
-		panic("invalid path")
-	}
-
+func (c *Client) HeadObject(obj string) (int, string, error) {
 	req := c.newRequest()
-	status, head, err := req.Head(obj)
+	resp, _, err := req.Do("HEAD", obj, nil, nil, nil)
 	if err != nil {
-		panic(err)
+		return 0, "", &OSSError{err: err}
 	}
 
 	s := ""
-	for k, v := range head {
+	for k, v := range resp.Header {
 		s += fmt.Sprintf("%-24s: %s\n", k, v[0])
 	}
 
-	return status, s
+	return resp.StatusCode, s, nil
 }
 
 // GetFile gets file contents and writes to w
 func (c *Client) GetFile(file string, w io.Writer) error {
 	req := c.newRequest()
-	err := req.GetFile(file, w)
-	return err
+	resp, body, err := req.Do("GET", file, nil, nil, w)
+
+	if err != nil {
+		return &OSSError{err: err}
+	}
+
+	if resp.StatusCode != 200 {
+		return &OSSError{msg: string(body)}
+	}
+
+	return nil
 }
 
 // PutFile puts a file from rc
 func (c *Client) PutFile(file string, rc io.ReadCloser) error {
 	req := c.newRequest()
-	err := req.PutFile(file, rc)
-	return err
+	resp, body, err := req.Do("PUT", file, nil, rc, nil)
+
+	if err != nil {
+		return &OSSError{err: err}
+	}
+
+	if resp.StatusCode != 200 {
+		return &OSSError{msg: string(body)}
+	}
+
+	return nil
 }
 
 // CreateFolder creates a folder named path
-func (c *Client) CreateFolder(path string) *OSSError {
+func (c *Client) CreateFolder(path string) error {
 	if !strings.HasPrefix(path, "/") {
-		panic("invalid path: should begin with /")
+		return &OSSError{msg: "invalid path: should begin with /"}
 	}
 
 	// That folders end with slash is mandatory
@@ -212,7 +224,7 @@ func (c *Client) CreateFolder(path string) *OSSError {
 
 	// cannot create root
 	if path == "/" {
-		panic("cannot create root")
+		return &OSSError{msg: "cannot create root"}
 	}
 
 	req := c.newRequest()
@@ -223,7 +235,7 @@ func (c *Client) CreateFolder(path string) *OSSError {
 	}
 
 	if resp.StatusCode != 200 {
-		return &OSSError{err: nil, msg: string(body)}
+		return &OSSError{msg: string(body)}
 	}
 
 	return nil
