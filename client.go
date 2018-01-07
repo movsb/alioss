@@ -25,6 +25,7 @@ func newClient(bucket, location, key, secret string) *Client {
 	return c
 }
 
+// returns the endpoint
 func (c *Client) getHost() string {
 	return makePublicHost(c.bucket, c.location)
 }
@@ -52,11 +53,7 @@ func (c *Client) listObjectsInternal(prefix, marker string, recursive bool, file
 	}
 
 	if resp.StatusCode != 200 {
-		xerr, err := parseErrorXML(body)
-		if err != nil {
-			panic(err)
-		}
-		log.Fatalln(xerr)
+		log.Fatalln(string(body))
 	}
 
 	type ListObjectsResult struct {
@@ -164,11 +161,7 @@ func (c *Client) DeleteObject(obj string) {
 	}
 
 	if resp.StatusCode != 204 && resp.StatusCode != 200 {
-		xerr, err := parseErrorXML(body)
-		if err != nil {
-			panic(err)
-		}
-		panic(xerr)
+		panic(string(body))
 	}
 }
 
@@ -207,13 +200,33 @@ func (c *Client) PutFile(file string, rc io.ReadCloser) error {
 }
 
 // CreateFolder creates a folder named path
-func (c *Client) CreateFolder(path string) error {
+func (c *Client) CreateFolder(path string) *OSSError {
+	if !strings.HasPrefix(path, "/") {
+		panic("invalid path: should begin with /")
+	}
+
+	// That folders end with slash is mandatory
 	if !strings.HasSuffix(path, "/") {
 		path += "/"
 	}
+
+	// cannot create root
+	if path == "/" {
+		panic("cannot create root")
+	}
+
 	req := c.newRequest()
-	err := req.CreateFolder(path)
-	return err
+	resp, body, err := req.Do("PUT", path, nil, nil, nil)
+
+	if err != nil {
+		return &OSSError{err: err}
+	}
+
+	if resp.StatusCode != 200 {
+		return &OSSError{err: nil, msg: string(body)}
+	}
+
+	return nil
 }
 
 // MakeShare creates a sharing link with expiration set to expiration

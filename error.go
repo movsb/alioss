@@ -1,27 +1,20 @@
 package main
 
-import (
-	"encoding/xml"
-)
-
-/*
-<Error>
-	<Code>AccessDenied</Code>
-	<Message>Anonymous user has no right to access this bucket.</Message>
-	<RequestId>5A4FC8CD85566F6D751FD7D8</RequestId>
-	<HostId>twofei-test.oss-cn-shenzhen.aliyuncs.com</HostId>
-</Error>
-*/
-
-type xError struct {
-	Code      string
-	Message   string
-	RequestID string
-	HostID    string
+// OSSError reports an error that is produced by network or oss server
+type OSSError struct {
+	err error
+	msg string
 }
 
-func parseErrorXML(body []byte) (xerr *xError, err error) {
-	xerr = &xError{}
-	err = xml.Unmarshal(body, xerr)
-	return
+func (e OSSError) Error() string {
+	s := ""
+	if e.err != nil {
+		s += e.err.Error()
+		s += "\n"
+	}
+	if e.msg != "" {
+		s += e.msg
+		s += "\n"
+	}
+	return s
 }
