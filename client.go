@@ -14,6 +14,7 @@ type Client struct {
 	key      xAccessKey
 	bucket   string
 	location string
+	req      *xRequest
 }
 
 func newClient(bucket, location, key, secret string) *Client {
@@ -31,7 +32,11 @@ func (c *Client) getHost() string {
 }
 
 func (c *Client) newRequest() *xRequest {
-	return newRequest(makePublicHost(c.bucket, c.location), c.bucket, &c.key)
+	if c.req == nil {
+		c.req = newRequest(c.getHost(), c.bucket, &c.key)
+	}
+
+	return c.req
 }
 
 func (c *Client) listObjectsInternal(prefix, marker string, recursive bool, files *[]File, folders *[]Folder, nextMarker *string, prefixes *map[string]bool) bool {
