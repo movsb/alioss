@@ -350,6 +350,7 @@ func eval(argv []string) {
 				if argc >= 3 {
 					spec := normalizeSlash(argv[2])
 					files, folders := oss.ListPrefix(spec)
+
 					if findFile(files, spec) {
 						if err = oss.DeleteObject(spec); err != nil {
 							panic(err)
@@ -383,6 +384,10 @@ func eval(argv []string) {
 							fmt.Println(" Done.")
 						}
 						return
+					}
+
+					// listing empty bucket returns nothing
+					if len(files) == 0 && len(folders) == 0 && spec == "/" {
 						return
 					}
 
