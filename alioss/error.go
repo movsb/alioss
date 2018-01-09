@@ -1,4 +1,4 @@
-package main
+package alioss
 
 // OSSError reports an error that is produced by network or oss server
 type OSSError struct {

@@ -1,4 +1,4 @@
-package main
+package alioss
 
 import (
 	"os"
@@ -7,12 +7,12 @@ import (
 	"strings"
 )
 
-// parseExpiration parses expression as expiration
+// ParseExpiration parses expression as expiration
 // Expiration is expressed as:
 //		?d?h?m?s
 // where:
 //		d: day, h: hour, m: minute, s: second
-func parseExpiration(expr string) int {
+func ParseExpiration(expr string) int {
 	var day, hour, minute, second int
 
 	for i := 0; i < len(expr); i++ {
@@ -56,10 +56,10 @@ func parseExpiration(expr string) int {
 	return expiration
 }
 
-// Lists  all files (no folders) in a folder
+// ListFiles Lists  all files (no folders) in a folder
 // returns the prefix dir path, files and error
 // returned files does not include dir(cleaned) as its prefix
-func listFiles(dir string) (string, []string, error) {
+func ListFiles(dir string) (string, []string, error) {
 	var files []string
 	var isWindows = runtime.GOOS == "windows"
 	var cleanedDir = filepath.Clean(dir)

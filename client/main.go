@@ -1,6 +1,7 @@
 package main
 
 import (
+	"alioss/alioss"
 	"bufio"
 	"fmt"
 	"log"
@@ -29,7 +30,7 @@ func dirName(path string) string {
 	return path[:i+1]
 }
 
-func findFile(files []File, file string) bool {
+func findFile(files []alioss.File, file string) bool {
 	for _, f := range files {
 		if f.Key == file {
 			return true
@@ -38,7 +39,7 @@ func findFile(files []File, file string) bool {
 	return false
 }
 
-func findFolder(folders []Folder, folder string) bool {
+func findFolder(folders []alioss.Folder, folder string) bool {
 	for _, f := range folders {
 		if string(f) == folder {
 			return true
@@ -70,7 +71,7 @@ Syntax:
 	fmt.Fprintln(os.Stderr, s)
 }
 
-var oss *Client
+var oss *alioss.Client
 
 func eval(argv []string) {
 	argc := len(argv)
@@ -130,7 +131,7 @@ func eval(argv []string) {
 					expr := 0
 
 					if argc >= 4 {
-						expr = parseExpiration(argv[3])
+						expr = alioss.ParseExpiration(argv[3])
 						if expr == -1 {
 							panic("bad expiration")
 						}
@@ -319,7 +320,7 @@ func eval(argv []string) {
 							}
 							fmt.Println(" Done.")
 						} else if statSrc.IsDir() {
-							prefix, files, err := listFiles(src)
+							prefix, files, err := alioss.ListFiles(src)
 							if err != nil {
 								panic(err)
 							}
@@ -471,7 +472,7 @@ func readConfig() {
 func main() {
 	readConfig()
 
-	oss = newClient(
+	oss = alioss.NewClient(
 		config["bucket"],
 		config["location"],
 		config["key"],

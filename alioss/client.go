@@ -1,4 +1,4 @@
-package main
+package alioss
 
 import (
 	"encoding/xml"
@@ -17,7 +17,7 @@ type Client struct {
 	req      *xRequest
 }
 
-func newClient(bucket, location, key, secret string) *Client {
+func NewClient(bucket, location, key, secret string) *Client {
 	c := &Client{
 		key:      xAccessKey{key: key, secret: secret},
 		bucket:   bucket,
