@@ -27,13 +27,13 @@ func NewClient(bucket, location, key, secret string) *Client {
 }
 
 // returns the endpoint
-func (c *Client) getHost() string {
+func (c *Client) GetHost() string {
 	return makePublicHost(c.bucket, c.location)
 }
 
 func (c *Client) newRequest() *xRequest {
 	if c.req == nil {
-		c.req = newRequest(c.getHost(), c.bucket, &c.key)
+		c.req = newRequest(c.GetHost(), c.bucket, &c.key)
 	}
 
 	return c.req
@@ -256,13 +256,13 @@ func (c *Client) MakeShare(resource string, expiration int) string {
 	link := ""
 
 	if expiration > 0 {
-		link, _ = makeURL(c.getHost(), resource, map[string]string{
+		link, _ = makeURL(c.GetHost(), resource, map[string]string{
 			"OSSAccessKeyId": c.key.key,
 			"Expires":        strconv.Itoa(expiration),
 			"Signature":      signURL(&c.key, expiration, "/"+c.bucket+resource),
 		})
 	} else {
-		link, _ = makeURL(c.getHost(), resource, nil)
+		link, _ = makeURL(c.GetHost(), resource, nil)
 	}
 
 	return link
