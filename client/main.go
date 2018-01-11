@@ -131,7 +131,7 @@ func eval(argv []string) {
 					expr := 0
 
 					if argc >= 4 {
-						expr = alioss.ParseExpiration(argv[3])
+						expr = parseExpiration(argv[3])
 						if expr == -1 {
 							panic("bad expiration")
 						}
@@ -320,7 +320,7 @@ func eval(argv []string) {
 							}
 							fmt.Println(" Done.")
 						} else if statSrc.IsDir() {
-							prefix, files, err := alioss.ListFiles(src)
+							prefix, files, err := listFiles(src)
 							if err != nil {
 								panic(err)
 							}

@@ -4,7 +4,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha1"
 	"encoding/base64"
-	"strconv"
+	"fmt"
 )
 
 // AccessKey is the key-secret pair that is used to
@@ -29,7 +29,7 @@ func signHead(key *AccessKey, verb string, date string, resource string) string 
 }
 
 // signURL signs temporary URL
-func signURL(key *AccessKey, expiration int, resource string) string {
-	msg := "GET\n\n\n" + strconv.Itoa(expiration) + "\n" + resource
+func signURL(key *AccessKey, expiration uint, resource string) string {
+	msg := "GET\n\n\n" + fmt.Sprint(expiration) + "\n" + resource
 	return sign(key, msg)
 }

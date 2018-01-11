@@ -38,7 +38,11 @@ func escapePath(path string) string {
 	j := 0
 	for i := 0; i < len(path); i++ {
 		c := path[i]
-		if '0' <= c && c <= '9' || 'a' <= c && c <= 'z' || 'A' <= c && c <= 'Z' || c == '/' || c == '-' || c == '_' || c == '.' || c == '~' {
+		if '0' <= c && c <= '9' ||
+			'a' <= c && c <= 'z' ||
+			'A' <= c && c <= 'Z' ||
+			c == '/' || c == '-' || c == '_' ||
+			c == '.' || c == '~' {
 			s[j] = c
 			j++
 		} else {
@@ -70,7 +74,12 @@ func makeURL(host, resource string, queries map[string]string) (string, error) {
 	return u.String(), nil
 }
 
-func (r *xRequest) Do(method string, resource string, queries map[string]string, rc io.ReadCloser, w io.Writer) (*http.Response, []byte, error) {
+func (r *xRequest) Do(
+	method string,
+	resource string,
+	queries map[string]string,
+	rc io.ReadCloser, w io.Writer,
+) (*http.Response, []byte, error) {
 	u, err := makeURL(r.host, resource, queries)
 	if err != nil {
 		return nil, nil, err

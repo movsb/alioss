@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"strconv"
 	"strings"
 )
 
@@ -261,14 +260,15 @@ func (c *Client) CreateFolder(path string) error {
 	return nil
 }
 
-// MakeShare creates a sharing link with expiration set to expiration
-func (c *Client) MakeShare(resource string, expiration int) string {
+// MakeShare creates a sharing link with expiration
+// set to expiration seconds
+func (c *Client) MakeShare(resource string, expiration uint) string {
 	link := ""
 
 	if expiration > 0 {
 		link, _ = makeURL(c.GetEndpoint(), resource, map[string]string{
 			"OSSAccessKeyId": c.key.Key,
-			"Expires":        strconv.Itoa(expiration),
+			"Expires":        fmt.Sprint(expiration),
 			"Signature":      signURL(&c.key, expiration, "/"+c.bucket+resource),
 		})
 	} else {
