@@ -11,35 +11,45 @@ import (
 
 // Client represents an alioss client
 type Client struct {
-	key      xAccessKey
+	key      AccessKey
 	bucket   string
 	location string
 	req      *xRequest
 }
 
+// NewClient creates a new client that can be used to
+// access all functionalities privided by this library
+// to issue requests to the alioss server.
 func NewClient(bucket, location, key, secret string) *Client {
 	c := &Client{
-		key:      xAccessKey{key: key, secret: secret},
+		key:      AccessKey{Key: key, Secret: secret},
 		bucket:   bucket,
 		location: location,
 	}
 	return c
 }
 
-// returns the endpoint
-func (c *Client) GetHost() string {
-	return makePublicHost(c.bucket, c.location)
+// GetEndpoint returns the Endpoint
+// with current bucket and location
+func (c *Client) GetEndpoint() string {
+	return "https://" + c.bucket + "." + c.location + ossServerSuffix
 }
 
 func (c *Client) newRequest() *xRequest {
 	if c.req == nil {
-		c.req = newRequest(c.GetHost(), c.bucket, &c.key)
+		c.req = newRequest(c.GetEndpoint(), c.bucket, &c.key)
 	}
 
 	return c.req
 }
 
-func (c *Client) listObjectsInternal(prefix, marker string, recursive bool, files *[]File, folders *[]Folder, nextMarker *string, prefixes *map[string]bool) bool {
+func (c *Client) listObjectsInternal(
+	prefix, marker string,
+	recursive bool,
+	files *[]File, folders *[]Folder,
+	nextMarker *string,
+	prefixes *map[string]bool,
+) bool {
 	req := c.newRequest()
 	delimiter := ""
 	if !recursive {
@@ -256,13 +266,13 @@ func (c *Client) MakeShare(resource string, expiration int) string {
 	link := ""
 
 	if expiration > 0 {
-		link, _ = makeURL(c.GetHost(), resource, map[string]string{
-			"OSSAccessKeyId": c.key.key,
+		link, _ = makeURL(c.GetEndpoint(), resource, map[string]string{
+			"OSSAccessKeyId": c.key.Key,
 			"Expires":        strconv.Itoa(expiration),
 			"Signature":      signURL(&c.key, expiration, "/"+c.bucket+resource),
 		})
 	} else {
-		link, _ = makeURL(c.GetHost(), resource, nil)
+		link, _ = makeURL(c.GetEndpoint(), resource, nil)
 	}
 
 	return link

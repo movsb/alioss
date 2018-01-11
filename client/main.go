@@ -53,7 +53,7 @@ func help() {
  
 Syntax:
 
-    <type>   <command>    <[parameters...]>
+    <type>   <command>    <parameters...>
 
     object   list         <directory>
     object   mkdir        <directory>

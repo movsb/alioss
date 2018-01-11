@@ -9,10 +9,6 @@ const (
 	ossServerSuffix = ".aliyuncs.com"
 )
 
-func makePublicHost(bucketName, bucketLocation string) string {
-	return "https://" + bucketName + "." + bucketLocation + ossServerSuffix
-}
-
 // Owner represents an owner of a file, a folder, or a bucket
 type Owner struct {
 	ID          string

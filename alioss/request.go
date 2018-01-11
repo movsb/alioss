@@ -15,13 +15,13 @@ func gmdate() string {
 }
 
 type xRequest struct {
-	key    *xAccessKey
+	key    *AccessKey
 	host   string
 	bucket string
 	c      http.Client
 }
 
-func newRequest(host string, bucket string, key *xAccessKey) *xRequest {
+func newRequest(host string, bucket string, key *AccessKey) *xRequest {
 	r := &xRequest{}
 	r.host = host
 	r.key = key
