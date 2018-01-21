@@ -31,7 +31,7 @@ type File struct {
 func (f *File) dirName() string {
 	i := strings.LastIndexByte(f.Key, '/')
 	if i == -1 {
-		return "/"
+		return ""
 	}
 
 	return f.Key[:i+1]

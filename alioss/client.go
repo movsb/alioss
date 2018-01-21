@@ -4,8 +4,6 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
-	"log"
-	"strings"
 )
 
 // Client represents an alioss client
@@ -43,13 +41,22 @@ func (c *Client) newRequest() *xRequest {
 }
 
 func (c *Client) listObjectsInternal(
-	prefix, marker string,
+	prefix string,
+	marker string,
 	recursive bool,
-	files *[]File, folders *[]Folder,
+	files *[]File,
+	folders *[]Folder,
 	nextMarker *string,
 	prefixes *map[string]bool,
-) bool {
+) error {
+	if prefix != "" && prefix[len(prefix)-1] != '/' {
+		return ErrArgs
+	}
+
 	req := c.newRequest()
+
+	// delimiter delimites the objects' full path
+	// into common prefixes (namely, the folders)
 	delimiter := ""
 	if !recursive {
 		delimiter = "/"
@@ -63,11 +70,15 @@ func (c *Client) listObjectsInternal(
 	}, nil, nil)
 
 	if err != nil {
-		panic(err)
+		return err
+	}
+
+	if resp.StatusCode == 403 {
+		return ErrBucketNotExist
 	}
 
 	if resp.StatusCode != 200 {
-		log.Fatalln(string(body))
+		return &OSSError{msg: string(body)}
 	}
 
 	type ListObjectsResult struct {
@@ -85,13 +96,18 @@ func (c *Client) listObjectsInternal(
 		panic(err)
 	}
 
-	isTruncated := rets.IsTruncated
-	if isTruncated {
-		*nextMarker = rets.NextMarker
+	if len(rets.Contents) == 0 && len(rets.CommonPrefixes) == 0 {
+		return ErrNotFound
 	}
 
+	lenPrefix := len(prefix)
+
 	for _, obj := range rets.Contents {
-		obj.Key = "/" + obj.Key
+		obj.Key = obj.Key[lenPrefix:]
+		// The folder itself is also returned
+		if obj.Key == "" {
+			continue
+		}
 
 		if !recursive || obj.isFile() {
 			*files = append(*files, obj.File)
@@ -106,16 +122,23 @@ func (c *Client) listObjectsInternal(
 		}
 	}
 
+	delete(*prefixes, "")
+
 	if !recursive {
 		for _, folder := range rets.CommonPrefixes {
-			*folders = append(*folders, Folder("/"+folder.Prefix))
+			*folders = append(*folders, Folder(folder.Prefix[lenPrefix:]))
 		}
 	}
 
-	return isTruncated
+	if rets.IsTruncated {
+		*nextMarker = rets.NextMarker
+		return nil
+	}
+
+	return io.EOF
 }
 
-func (c *Client) listObjectsLoop(prefix string, recursive bool) ([]File, []Folder) {
+func (c *Client) listObjectsLoop(prefix string, recursive bool) ([]File, []Folder, error) {
 	var (
 		marker   string
 		prefixes map[string]bool
@@ -125,8 +148,21 @@ func (c *Client) listObjectsLoop(prefix string, recursive bool) ([]File, []Folde
 
 	prefixes = make(map[string]bool)
 
-	for c.listObjectsInternal(prefix, marker, recursive, &files, &folders, &marker, &prefixes) {
-		// emply block
+	var err error
+
+	for err == nil {
+		err = c.listObjectsInternal(
+			prefix, marker, recursive,
+			&files, &folders, &marker, &prefixes,
+		)
+		switch err {
+		case nil:
+			continue
+		case io.EOF:
+			break
+		default:
+			return nil, nil, err
+		}
 	}
 
 	if recursive {
@@ -135,25 +171,21 @@ func (c *Client) listObjectsLoop(prefix string, recursive bool) ([]File, []Folde
 		}
 	}
 
-	return files, folders
-}
-
-// ListPrefix lists
-func (c *Client) ListPrefix(prefix string) ([]File, []Folder) {
-	if prefix == "" || prefix[0] != '/' {
-		panic("invalid path.")
-	}
-
-	return c.listObjectsLoop(prefix[1:], true)
+	return files, folders, nil
 }
 
 // ListFolder lists files and folders that inside it
-func (c *Client) ListFolder(folder string, recursive bool) ([]File, []Folder) {
-	if folder == "" || folder[0] != '/' {
-		panic("invalid path.")
+func (c *Client) ListFolder(folder string, recursive bool) ([]File, []Folder, error) {
+	if folder == "" {
+		return nil, nil, ErrArgs
 	}
 
-	prefix := folder[1:]
+	prefix := folder
+
+	if prefix[0] == '/' {
+		prefix = prefix[1:]
+	}
+
 	if prefix != "" && prefix[len(prefix)-1] != '/' {
 		prefix += "/"
 	}
@@ -161,11 +193,14 @@ func (c *Client) ListFolder(folder string, recursive bool) ([]File, []Folder) {
 	return c.listObjectsLoop(prefix, recursive)
 }
 
-// DeleteObject deletes an object
+// DeleteObject deletes an object.
+// It can be either a file or a folder (no recursion)
+// If the file doesn't exist, DeleteObject will return nil
+// To determine the existence of a file, call FileExists
 func (c *Client) DeleteObject(obj string) error {
 	// cannot delete /
-	if obj == "/" {
-		return nil
+	if obj == "" || obj == "/" {
+		return ErrArgs
 	}
 
 	req := c.newRequest()
@@ -182,12 +217,56 @@ func (c *Client) DeleteObject(obj string) error {
 	return nil
 }
 
+// DeleteFolder recursively deletes objects(files and folders) in it
+// On deleting every object, it calls callback with the obj name
+func (c *Client) DeleteFolder(folder string, callback func(obj string) bool) error {
+	if folder == "" {
+		return ErrArgs
+	}
+
+	if folder[len(folder)-1] != '/' {
+		folder += "/"
+	}
+
+	var err error
+
+	files, folders, err := c.ListFolder(folder, true)
+	if err != nil {
+		return err
+	}
+
+	for _, file := range files {
+		if callback(file.Key) {
+			if err = c.DeleteObject(folder + file.Key); err != nil {
+				return err
+			}
+		}
+	}
+
+	for _, f := range folders {
+		if callback(string(f)) {
+			if err = c.DeleteObject(folder + string(f)); err != nil {
+				return err
+			}
+		}
+	}
+
+	if folder != "/" && callback(folder) {
+		err = c.DeleteObject(folder)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // HeadObject heads an object
 func (c *Client) HeadObject(obj string) (int, string, error) {
 	req := c.newRequest()
 	resp, _, err := req.Do("HEAD", obj, nil, nil, nil)
 	if err != nil {
-		return 0, "", &OSSError{err: err}
+		return 0, "", err
 	}
 
 	s := ""
@@ -196,6 +275,29 @@ func (c *Client) HeadObject(obj string) (int, string, error) {
 	}
 
 	return resp.StatusCode, s, nil
+}
+
+// FileExists returns nil if `file` is a file and it doest exist
+// It calls HeadObject
+func (c *Client) FileExists(file string) error {
+	// must be a file path, not folder
+	if file == "" || file[len(file)-1] == '/' {
+		return ErrArgs
+	}
+
+	code, _, err := c.HeadObject(file)
+	if err != nil {
+		return err
+	}
+
+	switch code {
+	case 200:
+		return nil
+	case 404:
+		return ErrNotFound
+	default:
+		return ErrError
+	}
 }
 
 // GetFile gets file contents and writes to w
@@ -232,25 +334,31 @@ func (c *Client) PutFile(file string, rc io.ReadCloser) error {
 
 // CreateFolder creates a folder named path
 func (c *Client) CreateFolder(path string) error {
-	if !strings.HasPrefix(path, "/") {
-		return &OSSError{msg: "invalid path: should begin with /"}
+	if path == "" {
+		return ErrArgs
 	}
 
-	// That folders end with slash is mandatory
-	if !strings.HasSuffix(path, "/") {
+	if path == "/" {
+		return nil
+	}
+
+	if path[0] != '/' {
+		path = "/" + path
+	}
+
+	if path[len(path)-1] != '/' {
 		path += "/"
 	}
 
-	// cannot create root
-	if path == "/" {
-		return &OSSError{msg: "cannot create root"}
+	if c.FileExists(path[0:len(path)-1]) == nil {
+		return ErrExists
 	}
 
 	req := c.newRequest()
 	resp, body, err := req.Do("PUT", path, nil, nil, nil)
 
 	if err != nil {
-		return &OSSError{err: err}
+		return err
 	}
 
 	if resp.StatusCode != 200 {

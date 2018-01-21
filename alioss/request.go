@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -80,6 +81,17 @@ func (r *xRequest) Do(
 	queries map[string]string,
 	rc io.ReadCloser, w io.Writer,
 ) (*http.Response, []byte, error) {
+	// fix resource path
+	if resource == "" || resource[0] != '/' {
+		resource = "/" + resource
+	}
+
+	for _, s := range []string{"//", "\\", "/./", "/../"} {
+		if strings.Index(resource, s) != -1 {
+			return nil, nil, ErrArgs
+		}
+	}
+
 	u, err := makeURL(r.host, resource, queries)
 	if err != nil {
 		return nil, nil, err

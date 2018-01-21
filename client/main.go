@@ -30,24 +30,6 @@ func dirName(path string) string {
 	return path[:i+1]
 }
 
-func findFile(files []alioss.File, file string) bool {
-	for _, f := range files {
-		if f.Key == file {
-			return true
-		}
-	}
-	return false
-}
-
-func findFolder(folders []alioss.Folder, folder string) bool {
-	for _, f := range folders {
-		if string(f) == folder {
-			return true
-		}
-	}
-	return false
-}
-
 func help() {
 	s := `alioss - a simple Ali OSS manager
  
@@ -90,7 +72,14 @@ func eval(argv []string) {
 			if cmd == "list" {
 				if argc >= 3 {
 					folder := argv[2]
-					files, folders := oss.ListFolder(folder, false)
+					files, folders, err := oss.ListFolder(folder, false)
+					if err != nil {
+						if err == alioss.ErrNotFound {
+							fmt.Fprintln(os.Stderr, err)
+							return
+						}
+						panic(err)
+					}
 					if len(files) > 0 {
 						fmt.Println("Files:")
 						for _, file := range files {
@@ -109,21 +98,25 @@ func eval(argv []string) {
 				if argc >= 3 {
 					path := argv[2]
 					err := oss.CreateFolder(path)
-					if err != nil {
-						panic(err)
-					} else {
+					switch err {
+					case nil:
 						fmt.Println("Created.")
+					default:
+						fmt.Fprintln(os.Stderr, err)
+						panic(err)
 					}
 				}
 			} else if cmd == "head" {
 				if argc >= 3 {
 					file := argv[2]
 					status, head, err := oss.HeadObject(file)
-					if err != nil {
-						panic(err)
+					switch err {
+					case nil:
+						fmt.Println("Status: ", status)
+						fmt.Println(head)
+					default:
+						fmt.Fprintln(os.Stderr, err)
 					}
-					fmt.Println("Status: ", status)
-					fmt.Println(head)
 				}
 			} else if cmd == "sign" {
 				if argc >= 3 {
@@ -140,43 +133,16 @@ func eval(argv []string) {
 						expr += current
 					}
 
-					link := oss.MakeShare(file, expr)
+					link := oss.MakeShare(file, uint(expr))
 
 					fmt.Println(link)
 				}
 			} else if cmd == "download" {
 				if argc >= 3 {
 					inputPath := normalizeSlash(argv[2])
-					inputDir := dirName(inputPath)
 
-					if inputPath[0] != '/' {
-						panic("invalid path")
-					}
-
-					files, folders := oss.ListFolder(inputDir, false)
-
-					isFileDownload := inputPath[len(inputPath)-1] != '/'
-
-					if isFileDownload && !findFile(files, inputPath) {
-						isFileDownload = false
-					}
-
-					if !isFileDownload {
-						inputPath2 := inputPath
-						if inputPath[len(inputPath)-1] != '/' {
-							inputPath2 += "/"
-						}
-
-						hasFolder := inputPath2 == "/" || findFolder(folders, inputPath2)
-						if !hasFolder {
-							fmt.Fprintln(os.Stderr, "No such file or folder:", inputPath)
-							return
-						}
-
-						inputDir = inputPath2
-					}
-
-					if isFileDownload {
+					// if it is a file downloading
+					if oss.FileExists(inputPath) == nil {
 						localDir := "."
 						localName := filepath.Base(inputPath)
 
@@ -184,23 +150,17 @@ func eval(argv []string) {
 							str := normalizeSlash(argv[3])
 							if fi, err := os.Stat(str); err == nil && fi.IsDir() || str[len(str)-1] == '/' {
 								localDir = str
-								if localDir[len(localDir)-1] == '/' {
-									localDir = localDir[:len(localDir)-1]
-								}
 							} else {
 								localDir = filepath.Dir(str)
 								localName = filepath.Base(str)
 							}
 						}
 
-						os.MkdirAll(localDir, os.ModePerm)
-
-						localPath := ""
-						if localDir[len(localDir)-1] == '/' {
-							localPath = localDir + localName
-						} else {
-							localPath = localDir + "/" + localName
+						if err = os.MkdirAll(localDir, os.ModePerm); err != nil && !os.IsExist(err) {
+							panic(err)
 						}
+
+						localPath := filepath.Join(localDir, localName)
 
 						fp, err := os.Create(localPath)
 						if err != nil {
@@ -213,81 +173,80 @@ func eval(argv []string) {
 						if err != nil {
 							panic(err)
 						}
-					} else {
-						localDir := "."
+						return
+					}
 
-						if argc >= 4 {
-							str := normalizeSlash(argv[3])
-							if fi, err := os.Stat(str); err == nil && !fi.IsDir() {
-								fmt.Fprintln(os.Stderr, str, "exists, and is not a directory. aborting.")
-								return
+					localDir := "."
+
+					if argc >= 4 {
+						str := normalizeSlash(argv[3])
+						if fi, err := os.Stat(str); err == nil && !fi.IsDir() {
+							fmt.Fprintln(os.Stderr, str, "exists, and is not a directory. aborting.")
+							return
+						}
+						localDir = str
+					}
+
+					if inputPath[len(inputPath)-1] != '/' {
+						inputPath += "/"
+					}
+
+					files, folders, err := oss.ListFolder(inputPath, true)
+					if err != nil {
+						panic(err)
+					}
+
+					fmt.Print("Summary: ")
+					fmt.Print(len(files), " file")
+					if len(files) > 1 {
+						fmt.Print("s")
+					}
+
+					fmt.Print(" and ", len(folders), " folder")
+					if len(folders) > 1 {
+						fmt.Print("s")
+					}
+
+					fmt.Println()
+
+					if len(folders) > 0 {
+						fmt.Println()
+						for _, folder := range folders {
+							path := filepath.Join(localDir, string(folder))
+							fmt.Printf("  Making directory `%s' ...", path)
+							err = os.MkdirAll(path, os.ModePerm)
+							if err != nil {
+								panic(err)
 							}
-							localDir = str
-							if localDir[len(localDir)-1] == '/' {
-								localDir = localDir[:len(localDir)-1]
+							fmt.Println("  Done.")
+						}
+						fmt.Println()
+					}
+
+					if len(files) > 0 {
+						for _, file := range files {
+							path := filepath.Join(localDir, file.Key)
+							fp, err := os.Create(path)
+							if err != nil {
+								panic(err)
 							}
-						}
-
-						files, folders := oss.ListFolder(inputDir, true)
-
-						prefix := inputDir
-						if inputDir[len(inputDir)-1] != '/' {
-							prefix += "/"
-						}
-
-						fmt.Print("Summary: ")
-						fmt.Print(len(files), " file")
-						if len(files) > 1 {
-							fmt.Print("s")
-						}
-
-						fmt.Print(" and ", len(folders), " folder")
-						if len(folders) > 1 {
-							fmt.Print("s")
+							defer fp.Close()
+							fmt.Printf("  Downloading `%s' ...", file.Key)
+							err = oss.GetFile(inputPath+file.Key, fp)
+							if err != nil {
+								panic(err)
+							}
+							fmt.Println("  Done.")
 						}
 
 						fmt.Println()
-
-						if len(folders) > 0 {
-							fmt.Println()
-							for _, folder := range folders {
-								path := localDir + "/" + string(folder)[len(prefix):]
-								fmt.Printf("  Making directory `%s' ...", path)
-								err = os.MkdirAll(path, os.ModePerm)
-								if err != nil {
-									panic(err)
-								}
-								fmt.Println("  Done.")
-							}
-
-							fmt.Println()
-						}
-
-						if len(files) > 0 {
-							for _, file := range files {
-								path := localDir + "/" + file.Key[len(prefix):]
-								fp, err := os.Create(path)
-								if err != nil {
-									panic(err)
-								}
-								defer fp.Close()
-								fmt.Printf("  Downloading `%s' ...", file.Key)
-								err = oss.GetFile(file.Key, fp)
-								if err != nil {
-									panic(err)
-								}
-								fmt.Println("  Done.")
-							}
-
-							fmt.Println()
-						}
 					}
 				}
 			} else if cmd == "upload" {
 				if argc >= 4 {
 					dst := normalizeSlash(argv[2])
 					if dst[0] != '/' {
-						panic("bad remote path")
+						dst = "/" + dst
 					}
 
 					// dst is always a folder
@@ -350,50 +309,24 @@ func eval(argv []string) {
 			} else if cmd == "delete" {
 				if argc >= 3 {
 					spec := normalizeSlash(argv[2])
-					files, folders := oss.ListPrefix(spec)
-
-					if findFile(files, spec) {
-						if err = oss.DeleteObject(spec); err != nil {
-							panic(err)
-						}
-						fmt.Println("Deleted.")
-						return
-					}
-
-					specBack := spec
-					if specBack[len(specBack)-1] != '/' {
-						spec += "/"
-					}
-
-					if findFolder(folders, spec) {
-						for _, file := range files {
-							if strings.HasPrefix(file.Key, spec) {
-								fmt.Printf("Deleting `%s' ...", file.Key)
-								if err = oss.DeleteObject(file.Key); err != nil {
-									panic(err)
-								}
-								fmt.Println(" Done.")
-							}
-						}
-
-						// Deleting / is deleting a bucket
-						if spec != "/" {
-							fmt.Printf("Deleting `%s' ...", spec)
-							if err = oss.DeleteObject(spec); err != nil {
-								panic(err)
-							}
-							fmt.Println(" Done.")
+					if oss.FileExists(spec) == nil {
+						err = oss.DeleteObject(spec)
+						switch err {
+						case nil:
+							fmt.Println("Deleted.")
+						default:
+							fmt.Fprintln(os.Stderr, err)
 						}
 						return
 					}
 
-					// listing empty bucket returns nothing
-					if len(files) == 0 && len(folders) == 0 && spec == "/" {
+					if err = oss.DeleteFolder(spec, func(obj string) bool {
+						fmt.Printf("Deleting `%s' ...\n", obj)
+						return true
+					}); err != nil {
+						fmt.Fprintln(os.Stderr, err)
 						return
 					}
-
-					fmt.Fprintf(os.Stderr, "No such file or directory: `%s'.\n", specBack)
-					return
 				}
 			}
 		}
@@ -471,7 +404,6 @@ func readConfig() {
 
 func main() {
 	readConfig()
-
 	oss = alioss.NewClient(
 		config["bucket"],
 		config["location"],
